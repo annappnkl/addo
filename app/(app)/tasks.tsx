@@ -12,7 +12,6 @@ import {
   View,
   ViewProps,
   useWindowDimensions,
-  Alert,
   Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -48,8 +47,13 @@ type WebHoverExtras = { onMouseEnter?: () => void; onMouseLeave?: () => void };
 const HoverableView = View as React.ComponentType<ViewProps & WebHoverExtras>;
 
 // ─── TaskCard ─────────────────────────────────────────────────────────────────
-
-function TaskCard({ todo, onDelete }: { todo: Todo; onDelete: () => void }) {
+function TaskCard({
+  todo,
+  onDelete,
+}: {
+  todo: Todo;
+  onDelete: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
 
@@ -70,6 +74,7 @@ function TaskCard({ todo, onDelete }: { todo: Todo; onDelete: () => void }) {
     })
   ).current;
 
+  // ── Web ──────────────────────────────────────────────────────────────────────
   if (Platform.OS === 'web') {
     return (
       <HoverableView
@@ -82,20 +87,26 @@ function TaskCard({ todo, onDelete }: { todo: Todo; onDelete: () => void }) {
             <Text style={styles.taskName}>{todo.title}</Text>
             <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
           </View>
-          {hovered && (
+
+          {/* Trash icon — always in DOM, revealed via opacity on hover.
+              pointerEvents:'none' when invisible so it can't intercept card taps. */}
+          <View
+            style={[styles.trashWrap, { opacity: hovered ? 1 : 0 }]}
+            pointerEvents={hovered ? 'auto' : 'none'}
+          >
             <TouchableOpacity
               onPress={onDelete}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Feather name="trash-2" size={20} color={C.Destructive} />
             </TouchableOpacity>
-          )}
+          </View>
         </View>
       </HoverableView>
     );
   }
 
-  // Native: swipe-left to reveal red delete button
+  // ── Native ───────────────────────────────────────────────────────────────────
   return (
     <View style={styles.cardWrapperNative}>
       <View style={styles.deleteReveal}>
@@ -115,17 +126,16 @@ function TaskCard({ todo, onDelete }: { todo: Todo; onDelete: () => void }) {
 }
 
 // ─── BucketSection ────────────────────────────────────────────────────────────
-
 function BucketSection({
   bucket,
   todos,
-  onDelete,
   isWide,
+  onDelete,
 }: {
   bucket: Bucket;
   todos: Todo[];
-  onDelete: (id: string) => void;
   isWide: boolean;
+  onDelete: (id: string) => void;
 }) {
   const bucketTodos = todos.filter((t) => t.bucket === bucket);
 
@@ -143,12 +153,7 @@ function BucketSection({
           <TaskCard
             key={todo.id}
             todo={todo}
-            onDelete={() =>
-              Alert.alert('Delete task', 'Remove this task from your pool?', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete', style: 'destructive', onPress: () => onDelete(todo.id) },
-              ])
-            }
+            onDelete={() => onDelete(todo.id)}
           />
         ))
       )}
@@ -157,7 +162,6 @@ function BucketSection({
 }
 
 // ─── TasksScreen ──────────────────────────────────────────────────────────────
-
 export default function TasksScreen() {
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_BREAKPOINT;
@@ -169,7 +173,7 @@ export default function TasksScreen() {
   const [titleFocused, setTitleFocused] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption | null>(null);
   const [selectedBucket, setSelectedBucket] = useState<Bucket>('Must');
-  const [saving, setSaving] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const canAdd = title.trim().length > 0 && selectedDuration !== null;
 
@@ -188,13 +192,13 @@ export default function TasksScreen() {
 
   async function handleAdd() {
     if (!userId || !canAdd || selectedDuration === null) return;
-    setSaving(true);
+    setAdding(true);
     await insertTodo(userId, title.trim(), selectedDuration, selectedBucket);
     setTitle('');
     setSelectedDuration(null);
     setSelectedBucket('Must');
     await loadTodos(userId);
-    setSaving(false);
+    setAdding(false);
   }
 
   async function handleDelete(id: string) {
@@ -259,11 +263,11 @@ export default function TasksScreen() {
           <TouchableOpacity
             style={[styles.addButton, !canAdd && styles.addButtonDisabled]}
             onPress={handleAdd}
-            disabled={!canAdd || saving}
+            disabled={!canAdd || adding}
             activeOpacity={0.85}
           >
             <Text style={[styles.addButtonText, !canAdd && styles.addButtonTextDisabled]}>
-              {saving ? 'Adding…' : 'Add task'}
+              {adding ? 'Adding…' : 'Add task'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -277,8 +281,8 @@ export default function TasksScreen() {
               key={bucket}
               bucket={bucket}
               todos={todos}
-              onDelete={handleDelete}
               isWide={isWide}
+              onDelete={handleDelete}
             />
           ))}
         </View>
@@ -288,15 +292,9 @@ export default function TasksScreen() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: C.Bg,
-  },
-  scrollContent: {
-    paddingBottom: 48,
-  },
+  root: { flex: 1, backgroundColor: C.Bg },
+  scrollContent: { paddingBottom: 48 },
 
   // ── Add task area
   addArea: {
@@ -315,16 +313,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: C.TextPrimary,
   },
-  titleInputFocused: {
-    borderColor: C.Accent,
-  },
-  pillsScroll: {
-    flexGrow: 0,
-  },
-  pillsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  titleInputFocused: { borderColor: C.Accent },
+  pillsScroll: { flexGrow: 0 },
+  pillsRow: { flexDirection: 'row', gap: 8 },
   pill: {
     backgroundColor: C.SurfaceAlt,
     borderRadius: 999,
@@ -333,22 +324,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  pillSelected: {
-    backgroundColor: C.AccentLight,
-    borderColor: C.Accent,
-  },
-  pillText: {
-    fontSize: 13,
-    color: C.TextSecondary,
-  },
-  pillTextSelected: {
-    color: C.Accent,
-    fontWeight: '600',
-  },
-  bucketPicker: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+  pillSelected: { backgroundColor: C.AccentLight, borderColor: C.Accent },
+  pillText: { fontSize: 13, color: C.TextSecondary },
+  pillTextSelected: { color: C.Accent, fontWeight: '600' },
+  bucketPicker: { flexDirection: 'row', gap: 8 },
   bucketPill: {
     flex: 1,
     backgroundColor: C.SurfaceAlt,
@@ -358,18 +337,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  bucketPillSelected: {
-    backgroundColor: C.AccentLight,
-    borderColor: C.Accent,
-  },
-  bucketPillText: {
-    fontSize: 15,
-    color: C.TextSecondary,
-  },
-  bucketPillTextSelected: {
-    color: C.Accent,
-    fontWeight: '600',
-  },
+  bucketPillSelected: { backgroundColor: C.AccentLight, borderColor: C.Accent },
+  bucketPillText: { fontSize: 15, color: C.TextSecondary },
+  bucketPillTextSelected: { color: C.Accent, fontWeight: '600' },
   addButton: {
     backgroundColor: C.Accent,
     borderRadius: 28,
@@ -377,54 +347,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  addButtonDisabled: {
-    backgroundColor: C.Border,
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  addButtonTextDisabled: {
-    color: C.TextDisabled,
-  },
+  addButtonDisabled: { backgroundColor: C.Border },
+  addButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
+  addButtonTextDisabled: { color: C.TextDisabled },
 
-  divider: {
-    height: 1,
-    backgroundColor: C.Border,
-  },
+  divider: { height: 1, backgroundColor: C.Border },
 
   // ── Bucket sections
-  bucketsContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  bucketsContainerWide: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'flex-start',
-  },
+  bucketsContainer: { paddingHorizontal: 20, paddingTop: 20 },
+  bucketsContainerWide: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   bucketSection: {},
-  bucketSectionWide: {
-    flex: 1,
-  },
-  bucketSectionNarrow: {
-    marginBottom: 24,
-  },
+  bucketSectionWide: { flex: 1 },
+  bucketSectionNarrow: { marginBottom: 24 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  sectionLabel: {
-    fontSize: 13,
-    color: C.TextPrimary,
-  },
-  sectionTotal: {
-    fontSize: 13,
-    color: C.TextSecondary,
-  },
+  sectionLabel: { fontSize: 13, color: C.TextPrimary },
+  sectionTotal: { fontSize: 13, color: C.TextSecondary },
   emptyText: {
     fontSize: 15,
     color: C.TextSecondary,
@@ -432,7 +374,11 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
 
-  // ── Task cards — web
+  // ── Shared card text
+  taskName: { fontSize: 17, fontWeight: '600', color: C.TextPrimary, marginBottom: 4 },
+  taskDuration: { fontSize: 13, color: C.TextSecondary },
+
+  // ── Web cards
   cardWeb: {
     backgroundColor: C.Surface,
     borderRadius: 16,
@@ -443,16 +389,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 8,
   },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cardText: {
-    flex: 1,
-    marginRight: 8,
-  },
+  cardRow: { flexDirection: 'row', alignItems: 'center' },
+  cardText: { flex: 1, marginRight: 8 },
+  trashWrap: { padding: 4 },
 
-  // ── Task cards — native (swipe-to-delete)
+  // ── Native cards
   cardWrapperNative: {
     position: 'relative',
     marginBottom: 12,
@@ -480,21 +421,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cardNative: {
-    backgroundColor: C.Surface,
-    borderRadius: 16,
-    padding: 16,
-  },
-
-  // ── Shared card text
-  taskName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: C.TextPrimary,
-    marginBottom: 4,
-  },
-  taskDuration: {
-    fontSize: 13,
-    color: C.TextSecondary,
-  },
+  cardNative: { backgroundColor: C.Surface, borderRadius: 16, padding: 16 },
 });
