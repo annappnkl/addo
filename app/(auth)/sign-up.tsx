@@ -17,6 +17,7 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [statusText, setStatusText] = useState('');
 
   async function signUpWithApple() {
     try {
@@ -58,19 +59,17 @@ export default function SignUpScreen() {
     }
 
     setLoading(true);
+    setStatusText('Creating your account…');
     const { error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
 
     if (error) {
+      setLoading(false);
+      setStatusText('');
       Alert.alert('Sign up failed', error.message);
       return;
     }
 
-    Alert.alert(
-      'Check your email',
-      'We sent you a confirmation link. Click it to activate your account, then sign in.',
-      [{ text: 'OK', onPress: () => router.replace('/(auth)/sign-in') }]
-    );
+    router.replace('/(app)/tasks');
   }
 
   return (
@@ -120,6 +119,8 @@ export default function SignUpScreen() {
           <Text style={styles.buttonText}>{loading ? 'Creating account…' : 'Sign up with email'}</Text>
         </TouchableOpacity>
 
+        {statusText ? <Text style={styles.statusText}>{statusText}</Text> : null}
+
         <TouchableOpacity onPress={() => router.replace('/(auth)/sign-in')}>
           <Text style={styles.link}>Already have an account? Sign in</Text>
         </TouchableOpacity>
@@ -166,9 +167,15 @@ const styles = StyleSheet.create({
     padding: 14,
     alignItems: 'center',
     marginTop: 4,
-    marginBottom: 24,
+    marginBottom: 8,
   },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  statusText: {
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 14,
+    marginBottom: 16,
+  },
   link: { textAlign: 'center', color: '#666', textDecorationLine: 'underline' },
 });
