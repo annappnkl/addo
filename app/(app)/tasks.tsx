@@ -14,7 +14,6 @@ import {
   ScrollView,
 } from 'react-native';
 import { supabase } from '../../src/db/supabase';
-import { initDb } from '../../src/db/sqlite';
 import { insertTodo, updateTodo, deleteTodo, getTodosByUser } from '../../src/db/dao';
 import { bucketTotalMinutes, formatMinutes } from '../../src/logic/todos';
 import type { Todo, Bucket } from '../../src/types';
@@ -58,7 +57,6 @@ export default function TasksScreen() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    initDb();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setUserId(user.id);
@@ -67,8 +65,8 @@ export default function TasksScreen() {
     });
   }, []);
 
-  function loadTodos(uid: string) {
-    setTodos(getTodosByUser(uid));
+  async function loadTodos(uid: string) {
+    setTodos(await getTodosByUser(uid));
   }
 
   const openNew = useCallback((bucket: Bucket) => {
@@ -109,7 +107,7 @@ export default function TasksScreen() {
     setSaving(true);
 
     if (editing.id === null) {
-      insertTodo(
+      await insertTodo(
         userId,
         title,
         minutes,
@@ -118,7 +116,7 @@ export default function TasksScreen() {
         editing.notes.trim() || null
       );
     } else {
-      updateTodo(editing.id, {
+      await updateTodo(editing.id, {
         title,
         estimated_minutes: minutes,
         bucket: editing.bucket,
@@ -126,7 +124,7 @@ export default function TasksScreen() {
       });
     }
 
-    loadTodos(userId);
+    await loadTodos(userId);
     setSaving(false);
     closeModal();
   }
@@ -141,8 +139,7 @@ export default function TasksScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            deleteTodo(id);
-            if (userId) loadTodos(userId);
+            deleteTodo(id).then(() => { if (userId) loadTodos(userId); });
           },
         },
       ]

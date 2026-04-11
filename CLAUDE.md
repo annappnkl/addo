@@ -33,7 +33,7 @@ Anna Papanakli, Munich-based, building this solo. Role: designer/product + lead.
 ### Code / technical
 - **Stack is locked:** Expo (React Native + React Native Web) with TypeScript, Supabase backend, Expo SQLite local mirror, RevenueCat wrapper for subs (deferred), Vercel for web, EAS Build for iOS.
 - **TypeScript strict mode.** No `any` unless you've already tried for 10 minutes and commented why.
-- **One feature per commit (or a coherent slice).** Clean history matters — it's how Lead reviews your work.
+- **One feature per commit — no bundling.** If the handoff doc specifies 10 commits, make 10 commits. Clean granular history is how Lead reviews your work and how we roll back safely.
 - **Conventional Commit messages** (`feat:`, `fix:`, `chore:`, `docs:`, etc.) with the feature number when applicable, e.g. `feat(f1): task pool CRUD with sqlite mirror`.
 - **No features, no refactors, no abstractions beyond what the locked spec requires.** Don't design for hypothetical future needs. Three similar lines is better than a premature abstraction.
 - **Don't add error handling for impossible cases.** Validate at system boundaries (user input, external APIs), trust internal code.
@@ -46,6 +46,14 @@ Anna Papanakli, Munich-based, building this solo. Role: designer/product + lead.
 - **Run `npm run typecheck` and `npm run lint` before declaring a feature done.** If they fail, fix the root cause — don't paper over with `// @ts-ignore`.
 - **Ask Anna (not Lead) for external account actions:** Supabase project creation, Apple Developer sign-up, etc. You cannot do these, only she can.
 - **Never force-push, never amend committed work, never skip hooks with `--no-verify`.** Destructive git is off-limits without explicit permission.
+
+## Locked technical decisions (Session 1)
+- **expo-router** (file-based routing, Expo SDK 54 standard) — not React Navigation
+- **expo-crypto** for UUID generation — not the `uuid` npm package
+- **@react-native-async-storage/async-storage** for Supabase Auth session storage on mobile
+- **Bundle ID: `app.addo`** — permanent once registered with Apple, do not change
+- **Consent guard lives in `(app)/_layout.tsx`** — runs on every app open to catch future TOS version bumps
+- **Hand-written Database types in `src/db/supabase.ts`** — regenerate with `npx supabase gen types typescript` once the Supabase project exists
 
 ## Folder layout (canonical)
 ```

@@ -1,91 +1,55 @@
-import * as Crypto from 'expo-crypto';
-import { getDb } from './sqlite';
+// Web implementation — reads and writes go directly to Supabase.
+// No local SQLite layer on web (SharedArrayBuffer unavailable in browsers).
+// queueForSync is a no-op: writes are synchronous with the remote DB.
+import { supabase } from './supabase';
 import type { Todo, Bucket } from '../types';
 
-// Stub: queues a row for remote sync. Real sync engine built in a later session.
-function queueForSync(
-  tableName: string,
-  rowId: string,
-  operation: 'insert' | 'update' | 'delete'
-): void {
-  const db = getDb();
-  db.runSync(
-    `INSERT INTO sync_queue (table_name, row_id, operation, queued_at) VALUES (?, ?, ?, ?)`,
-    [tableName, rowId, operation, new Date().toISOString()]
-  );
+export async function getTodosByUser(userId: string): Promise<Todo[]> {
+  const { data, error } = await supabase
+    .from('todos')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as Todo[];
 }
 
-// --- Todos ---
-
-export function getTodosByUser(userId: string): Todo[] {
-  const db = getDb();
-  return db.getAllSync<Todo>(
-    `SELECT * FROM todos WHERE user_id = ? ORDER BY created_at ASC`,
-    [userId]
-  );
-}
-
-export function insertTodo(
+export async function insertTodo(
   userId: string,
   title: string,
   estimatedMinutes: number,
   bucket: Bucket,
   areaId: string | null = null,
   notes: string | null = null
-): Todo {
-  const db = getDb();
-  const now = new Date().toISOString();
-  const id = Crypto.randomUUID();
+): Promise<Todo> {
+  const { data, error } = await supabase
+    .from('todos')
+    .insert({
+      user_id: userId,
+      title,
+      estimated_minutes: estimatedMinutes,
+      bucket,
+      area_id: areaId,
+      notes,
+    })
+    .select()
+    .single();
 
-  db.runSync(
-    `INSERT INTO todos (id, title, estimated_minutes, bucket, area_id, notes, created_at, updated_at, user_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, title, estimatedMinutes, bucket, areaId, notes, now, now, userId]
-  );
-
-  queueForSync('todos', id, 'insert');
-
-  return {
-    id,
-    title,
-    estimated_minutes: estimatedMinutes,
-    bucket,
-    area_id: areaId,
-    notes,
-    created_at: now,
-    updated_at: now,
-    user_id: userId,
-    synced_at: null,
-  };
+  if (error) throw error;
+  return data as Todo;
 }
 
-export function updateTodo(
+export async function updateTodo(
   id: string,
   fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'bucket' | 'area_id' | 'notes'>>
-): void {
-  const db = getDb();
-  const now = new Date().toISOString();
-  const sets: string[] = [];
-  const values: (string | number | null)[] = [];
-
-  if (fields.title !== undefined) { sets.push('title = ?'); values.push(fields.title); }
-  if (fields.estimated_minutes !== undefined) { sets.push('estimated_minutes = ?'); values.push(fields.estimated_minutes); }
-  if (fields.bucket !== undefined) { sets.push('bucket = ?'); values.push(fields.bucket); }
-  if (fields.area_id !== undefined) { sets.push('area_id = ?'); values.push(fields.area_id); }
-  if (fields.notes !== undefined) { sets.push('notes = ?'); values.push(fields.notes); }
-
-  if (sets.length === 0) return;
-
-  sets.push('updated_at = ?');
-  values.push(now);
-  values.push(id);
-
-  db.runSync(`UPDATE todos SET ${sets.join(', ')} WHERE id = ?`, values);
-  queueForSync('todos', id, 'update');
+): Promise<void> {
+  if (Object.keys(fields).length === 0) return;
+  const { error } = await supabase.from('todos').update(fields).eq('id', id);
+  if (error) throw error;
 }
 
-export function deleteTodo(id: string): void {
-  const db = getDb();
-  db.runSync(`DELETE FROM todos WHERE id = ?`, [id]);
-  queueForSync('todos', id, 'delete');
+export async function deleteTodo(id: string): Promise<void> {
+  const { error } = await supabase.from('todos').delete().eq('id', id);
+  if (error) throw error;
 }
