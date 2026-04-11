@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { supabase } from '../../src/db/supabase';
-import { getTodosByUser, insertTodo, deleteTodo } from '../../src/db/dao';
+import { getTodosByUser, insertTodo, deleteTodo, updateTodo } from '../../src/db/dao';
 import { bucketTotalMinutes, formatMinutes } from '../../src/logic/todos';
 import type { Bucket, Todo } from '../../src/types';
 
@@ -46,13 +46,142 @@ const SWIPE_WIDTH = 72;
 type WebHoverExtras = { onMouseEnter?: () => void; onMouseLeave?: () => void };
 const HoverableView = View as React.ComponentType<ViewProps & WebHoverExtras>;
 
+// ─── Edit draft ───────────────────────────────────────────────────────────────
+interface EditDraft {
+  title: string;
+  duration: DurationOption | null;
+  bucket: Bucket;
+  notes: string;
+}
+
+function draftFromTodo(todo: Todo): EditDraft {
+  const matched = (DURATION_OPTIONS as readonly number[]).includes(todo.estimated_minutes)
+    ? (todo.estimated_minutes as DurationOption)
+    : null;
+  return {
+    title: todo.title,
+    duration: matched,
+    bucket: todo.bucket,
+    notes: todo.notes ?? '',
+  };
+}
+
+// ─── Shared edit form (rendered inside expanded card) ─────────────────────────
+function EditForm({
+  draft,
+  isSaving,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  draft: EditDraft;
+  isSaving: boolean;
+  onChange: (d: EditDraft) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const [titleFocused, setTitleFocused] = useState(false);
+  const [notesFocused, setNotesFocused] = useState(false);
+  const canSave = draft.title.trim().length > 0 && draft.duration !== null;
+
+  return (
+    <View style={styles.editForm}>
+      <TextInput
+        style={[styles.editInput, titleFocused && styles.editInputFocused]}
+        value={draft.title}
+        onChangeText={(v) => onChange({ ...draft, title: v })}
+        placeholder="Task title"
+        placeholderTextColor={C.TextDisabled}
+        onFocus={() => setTitleFocused(true)}
+        onBlur={() => setTitleFocused(false)}
+        autoFocus
+      />
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.pillsScroll}
+        contentContainerStyle={styles.pillsRow}
+      >
+        {DURATION_OPTIONS.map((d) => (
+          <TouchableOpacity
+            key={d}
+            style={[styles.pill, draft.duration === d && styles.pillSelected]}
+            onPress={() => onChange({ ...draft, duration: d })}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.pillText, draft.duration === d && styles.pillTextSelected]}>
+              {d} min
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <View style={styles.bucketPicker}>
+        {BUCKETS.map((b) => (
+          <TouchableOpacity
+            key={b}
+            style={[styles.bucketPill, draft.bucket === b && styles.bucketPillSelected]}
+            onPress={() => onChange({ ...draft, bucket: b })}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.bucketPillText, draft.bucket === b && styles.bucketPillTextSelected]}>
+              {b}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <TextInput
+        style={[styles.editInput, styles.editNotesInput, notesFocused && styles.editInputFocused]}
+        value={draft.notes}
+        onChangeText={(v) => onChange({ ...draft, notes: v })}
+        placeholder="Add a note, link, or anything else…"
+        placeholderTextColor={C.TextDisabled}
+        multiline
+        numberOfLines={3}
+        onFocus={() => setNotesFocused(true)}
+        onBlur={() => setNotesFocused(false)}
+      />
+
+      <View style={styles.editActions}>
+        <TouchableOpacity
+          style={[styles.editSaveBtn, !canSave && styles.editSaveBtnDisabled]}
+          onPress={onSave}
+          disabled={isSaving || !canSave}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.editSaveBtnText, !canSave && styles.editSaveBtnTextDisabled]}>
+            {isSaving ? 'Saving…' : 'Save'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.editCancelBtn} onPress={onCancel} activeOpacity={0.7}>
+          <Text style={styles.editCancelBtnText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 // ─── TaskCard ─────────────────────────────────────────────────────────────────
 function TaskCard({
   todo,
+  isExpanded,
+  draft,
+  isSaving,
+  onTap,
   onDelete,
+  onDraftChange,
+  onSave,
 }: {
   todo: Todo;
+  isExpanded: boolean;
+  draft: EditDraft;
+  isSaving: boolean;
+  onTap: () => void;
   onDelete: () => void;
+  onDraftChange: (d: EditDraft) => void;
+  onSave: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
@@ -74,8 +203,37 @@ function TaskCard({
     })
   ).current;
 
+  // Snap back when expanding so swipe state doesn't persist
+  useEffect(() => {
+    if (isExpanded) {
+      Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+    }
+  }, [isExpanded, translateX]);
+
+  const expandedHeader = (
+    <TouchableOpacity onPress={onTap} style={styles.expandedHeader} activeOpacity={0.7}>
+      <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
+      <Feather name="chevron-up" size={16} color={C.TextSecondary} />
+    </TouchableOpacity>
+  );
+
   // ── Web ──────────────────────────────────────────────────────────────────────
   if (Platform.OS === 'web') {
+    if (isExpanded) {
+      return (
+        <View style={styles.cardWeb}>
+          {expandedHeader}
+          <EditForm
+            draft={draft}
+            isSaving={isSaving}
+            onChange={onDraftChange}
+            onSave={onSave}
+            onCancel={onTap}
+          />
+        </View>
+      );
+    }
+
     return (
       <HoverableView
         style={styles.cardWeb}
@@ -83,10 +241,14 @@ function TaskCard({
         onMouseLeave={() => setHovered(false)}
       >
         <View style={styles.cardRow}>
-          <View style={styles.cardText}>
+          {/* Card content — tapping opens edit */}
+          <TouchableOpacity onPress={onTap} style={styles.cardText} activeOpacity={0.8}>
             <Text style={styles.taskName}>{todo.title}</Text>
             <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
-          </View>
+            {todo.notes ? (
+              <Text style={styles.taskNotes} numberOfLines={1}>{todo.notes}</Text>
+            ) : null}
+          </TouchableOpacity>
 
           {/* Trash icon — always in DOM, revealed via opacity on hover.
               pointerEvents:'none' when invisible so it can't intercept card taps. */}
@@ -107,6 +269,21 @@ function TaskCard({
   }
 
   // ── Native ───────────────────────────────────────────────────────────────────
+  if (isExpanded) {
+    return (
+      <View style={[styles.cardNative, styles.cardNativeStandalone]}>
+        {expandedHeader}
+        <EditForm
+          draft={draft}
+          isSaving={isSaving}
+          onChange={onDraftChange}
+          onSave={onSave}
+          onCancel={onTap}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.cardWrapperNative}>
       <View style={styles.deleteReveal}>
@@ -118,8 +295,13 @@ function TaskCard({
         style={[styles.cardNative, { transform: [{ translateX }] }]}
         {...panResponder.panHandlers}
       >
-        <Text style={styles.taskName}>{todo.title}</Text>
-        <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
+        <TouchableOpacity onPress={onTap} activeOpacity={0.8}>
+          <Text style={styles.taskName}>{todo.title}</Text>
+          <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
+          {todo.notes ? (
+            <Text style={styles.taskNotes} numberOfLines={1}>{todo.notes}</Text>
+          ) : null}
+        </TouchableOpacity>
       </Animated.View>
     </View>
   );
@@ -129,13 +311,25 @@ function TaskCard({
 function BucketSection({
   bucket,
   todos,
+  expandedId,
+  draft,
+  isSaving,
   isWide,
+  onToggle,
   onDelete,
+  onDraftChange,
+  onSave,
 }: {
   bucket: Bucket;
   todos: Todo[];
+  expandedId: string | null;
+  draft: EditDraft;
+  isSaving: boolean;
   isWide: boolean;
+  onToggle: (todo: Todo) => void;
   onDelete: (id: string) => void;
+  onDraftChange: (d: EditDraft) => void;
+  onSave: () => void;
 }) {
   const bucketTodos = todos.filter((t) => t.bucket === bucket);
 
@@ -153,7 +347,13 @@ function BucketSection({
           <TaskCard
             key={todo.id}
             todo={todo}
+            isExpanded={expandedId === todo.id}
+            draft={draft}
+            isSaving={isSaving}
+            onTap={() => onToggle(todo)}
             onDelete={() => onDelete(todo.id)}
+            onDraftChange={onDraftChange}
+            onSave={onSave}
           />
         ))
       )}
@@ -169,11 +369,17 @@ export default function TasksScreen() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
+  // Add form
   const [title, setTitle] = useState('');
   const [titleFocused, setTitleFocused] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption | null>(null);
   const [selectedBucket, setSelectedBucket] = useState<Bucket>('Must');
   const [adding, setAdding] = useState(false);
+
+  // Inline edit
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<EditDraft>({ title: '', duration: null, bucket: 'Must', notes: '' });
+  const [editSaving, setEditSaving] = useState(false);
 
   const canAdd = title.trim().length > 0 && selectedDuration !== null;
 
@@ -202,8 +408,35 @@ export default function TasksScreen() {
   }
 
   async function handleDelete(id: string) {
+    // Close edit if this todo was expanded
+    if (expandedId === id) setExpandedId(null);
     await deleteTodo(id);
     if (userId) await loadTodos(userId);
+  }
+
+  function handleToggle(todo: Todo) {
+    if (expandedId === todo.id) {
+      // Already expanded — collapse
+      setExpandedId(null);
+    } else {
+      // Expand and populate draft from current todo values
+      setExpandedId(todo.id);
+      setDraft(draftFromTodo(todo));
+    }
+  }
+
+  async function handleSave() {
+    if (!expandedId || !draft.title.trim() || draft.duration === null) return;
+    setEditSaving(true);
+    await updateTodo(expandedId, {
+      title: draft.title.trim(),
+      estimated_minutes: draft.duration,
+      bucket: draft.bucket,
+      notes: draft.notes.trim() || null,
+    });
+    setExpandedId(null);
+    if (userId) await loadTodos(userId);
+    setEditSaving(false);
   }
 
   return (
@@ -281,8 +514,14 @@ export default function TasksScreen() {
               key={bucket}
               bucket={bucket}
               todos={todos}
+              expandedId={expandedId}
+              draft={draft}
+              isSaving={editSaving}
               isWide={isWide}
+              onToggle={handleToggle}
               onDelete={handleDelete}
+              onDraftChange={setDraft}
+              onSave={handleSave}
             />
           ))}
         </View>
@@ -377,6 +616,15 @@ const styles = StyleSheet.create({
   // ── Shared card text
   taskName: { fontSize: 17, fontWeight: '600', color: C.TextPrimary, marginBottom: 4 },
   taskDuration: { fontSize: 13, color: C.TextSecondary },
+  taskNotes: { fontSize: 13, color: C.TextSecondary, marginTop: 2 },
+
+  // ── Expanded header (tap to collapse)
+  expandedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
 
   // ── Web cards
   cardWeb: {
@@ -422,4 +670,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardNative: { backgroundColor: C.Surface, borderRadius: 16, padding: 16 },
+  // Standalone = expanded native card (not inside swipe wrapper, needs its own shadow + margin)
+  cardNativeStandalone: {
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+
+  // ── Edit form (inside expanded card)
+  editForm: { gap: 10 },
+  editInput: {
+    backgroundColor: C.Surface,
+    borderWidth: 1,
+    borderColor: C.Border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: C.TextPrimary,
+  },
+  editInputFocused: { borderColor: C.Accent },
+  editNotesInput: { minHeight: 72, textAlignVertical: 'top' },
+  editActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  editSaveBtn: {
+    flex: 1,
+    backgroundColor: C.Accent,
+    borderRadius: 28,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editSaveBtnDisabled: { backgroundColor: C.Border },
+  editSaveBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  editSaveBtnTextDisabled: { color: C.TextDisabled },
+  editCancelBtn: {
+    flex: 1,
+    backgroundColor: C.SurfaceAlt,
+    borderRadius: 28,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editCancelBtnText: { color: C.TextPrimary, fontSize: 15, fontWeight: '600' },
 });
