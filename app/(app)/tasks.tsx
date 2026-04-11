@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActionSheetIOS,
+  Alert,
   Animated,
   PanResponder,
   Pressable,
@@ -19,6 +21,7 @@ import { supabase } from '../../src/db/supabase';
 import { getTodosByUser, insertTodo, deleteTodo, updateTodo } from '../../src/db/dao';
 import { bucketTotalMinutes, formatMinutes } from '../../src/logic/todos';
 import type { Bucket, Todo } from '../../src/types';
+import { DragProvider, DraggableTodo, DroppableBucket } from '../../src/components/dragDrop';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -173,6 +176,7 @@ function TaskCard({
   onDelete,
   onDraftChange,
   onSave,
+  onLongPress,
 }: {
   todo: Todo;
   isExpanded: boolean;
@@ -182,6 +186,7 @@ function TaskCard({
   onDelete: () => void;
   onDraftChange: (d: EditDraft) => void;
   onSave: () => void;
+  onLongPress?: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
@@ -295,7 +300,12 @@ function TaskCard({
         style={[styles.cardNative, { transform: [{ translateX }] }]}
         {...panResponder.panHandlers}
       >
-        <TouchableOpacity onPress={onTap} activeOpacity={0.8}>
+        <TouchableOpacity
+          onPress={onTap}
+          onLongPress={onLongPress}
+          delayLongPress={500}
+          activeOpacity={0.8}
+        >
           <Text style={styles.taskName}>{todo.title}</Text>
           <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
           {todo.notes ? (
@@ -319,6 +329,7 @@ function BucketSection({
   onDelete,
   onDraftChange,
   onSave,
+  onLongPress,
 }: {
   bucket: Bucket;
   todos: Todo[];
@@ -330,33 +341,44 @@ function BucketSection({
   onDelete: (id: string) => void;
   onDraftChange: (d: EditDraft) => void;
   onSave: () => void;
+  onLongPress: (todo: Todo) => void;
 }) {
   const bucketTodos = todos.filter((t) => t.bucket === bucket);
 
   return (
     <View style={[styles.bucketSection, isWide ? styles.bucketSectionWide : styles.bucketSectionNarrow]}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionLabel}>{bucket}</Text>
-        <Text style={styles.sectionTotal}>{formatMinutes(bucketTotalMinutes(todos, bucket))}</Text>
-      </View>
+      <DroppableBucket bucket={bucket}>
+        {(isDragOver) => (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionLabel, isDragOver && styles.sectionLabelDragOver]}>
+                {bucket}
+              </Text>
+              <Text style={styles.sectionTotal}>{formatMinutes(bucketTotalMinutes(todos, bucket))}</Text>
+            </View>
 
-      {bucketTodos.length === 0 ? (
-        <Text style={styles.emptyText}>Nothing here yet.</Text>
-      ) : (
-        bucketTodos.map((todo) => (
-          <TaskCard
-            key={todo.id}
-            todo={todo}
-            isExpanded={expandedId === todo.id}
-            draft={draft}
-            isSaving={isSaving}
-            onTap={() => onToggle(todo)}
-            onDelete={() => onDelete(todo.id)}
-            onDraftChange={onDraftChange}
-            onSave={onSave}
-          />
-        ))
-      )}
+            {bucketTodos.length === 0 ? (
+              <Text style={styles.emptyText}>Nothing here yet.</Text>
+            ) : (
+              bucketTodos.map((todo) => (
+                <DraggableTodo key={todo.id} id={todo.id} bucket={todo.bucket}>
+                  <TaskCard
+                    todo={todo}
+                    isExpanded={expandedId === todo.id}
+                    draft={draft}
+                    isSaving={isSaving}
+                    onTap={() => onToggle(todo)}
+                    onDelete={() => onDelete(todo.id)}
+                    onDraftChange={onDraftChange}
+                    onSave={onSave}
+                    onLongPress={() => onLongPress(todo)}
+                  />
+                </DraggableTodo>
+              ))
+            )}
+          </>
+        )}
+      </DroppableBucket>
     </View>
   );
 }
@@ -412,6 +434,36 @@ export default function TasksScreen() {
     if (expandedId === id) setExpandedId(null);
     await deleteTodo(id);
     if (userId) await loadTodos(userId);
+  }
+
+  async function handleMove(todoId: string, newBucket: Bucket) {
+    await updateTodo(todoId, { bucket: newBucket });
+    if (userId) await loadTodos(userId);
+  }
+
+  function handleLongPress(todo: Todo) {
+    // No-op on expanded cards — user is in edit mode
+    if (expandedId === todo.id) return;
+    const otherBuckets = BUCKETS.filter((b) => b !== todo.bucket);
+    const options = [...otherBuckets.map((b) => `Move to ${b}`), 'Cancel'];
+    const cancelIndex = options.length - 1;
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex: cancelIndex },
+        (buttonIndex) => {
+          if (buttonIndex === cancelIndex) return;
+          void handleMove(todo.id, otherBuckets[buttonIndex]);
+        }
+      );
+    } else {
+      Alert.alert('Move task', undefined, [
+        ...otherBuckets.map((b) => ({
+          text: `Move to ${b}`,
+          onPress: () => void handleMove(todo.id, b),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ]);
+    }
   }
 
   function handleToggle(todo: Todo) {
@@ -508,23 +560,26 @@ export default function TasksScreen() {
         <View style={styles.divider} />
 
         {/* ── Bucket sections ───────────────────────────────────────────── */}
-        <View style={[styles.bucketsContainer, isWide && styles.bucketsContainerWide]}>
-          {BUCKETS.map((bucket) => (
-            <BucketSection
-              key={bucket}
-              bucket={bucket}
-              todos={todos}
-              expandedId={expandedId}
-              draft={draft}
-              isSaving={editSaving}
-              isWide={isWide}
-              onToggle={handleToggle}
-              onDelete={handleDelete}
-              onDraftChange={setDraft}
-              onSave={handleSave}
-            />
-          ))}
-        </View>
+        <DragProvider onMove={handleMove}>
+          <View style={[styles.bucketsContainer, isWide && styles.bucketsContainerWide]}>
+            {BUCKETS.map((bucket) => (
+              <BucketSection
+                key={bucket}
+                bucket={bucket}
+                todos={todos}
+                expandedId={expandedId}
+                draft={draft}
+                isSaving={editSaving}
+                isWide={isWide}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+                onDraftChange={setDraft}
+                onSave={handleSave}
+                onLongPress={handleLongPress}
+              />
+            ))}
+          </View>
+        </DragProvider>
       </ScrollView>
     </SafeAreaView>
   );
@@ -605,6 +660,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionLabel: { fontSize: 13, color: C.TextPrimary },
+  sectionLabelDragOver: { color: C.Accent },
   sectionTotal: { fontSize: 13, color: C.TextSecondary },
   emptyText: {
     fontSize: 15,
