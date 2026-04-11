@@ -48,7 +48,33 @@ Anna Papanakli, Munich-based, building this solo. Role: designer/product + lead.
 - **Never force-push, never amend committed work, never skip hooks with `--no-verify`.** Destructive git is off-limits without explicit permission.
 
 ## Folder layout (canonical)
-To be established in the scaffolding step. When in place, document it here.
+```
+addo/
+├── app/                   # expo-router screens (file-based routing)
+│   ├── _layout.tsx        # root layout — DB init, StatusBar
+│   ├── index.tsx          # auth redirect (→ sign-in or →tasks)
+│   ├── (auth)/            # unauthenticated screens
+│   │   ├── sign-in.tsx
+│   │   ├── sign-up.tsx
+│   │   └── consent.tsx    # first-launch legal consent
+│   └── (app)/             # authenticated screens (consent-gated)
+│       ├── _layout.tsx    # checks consent on entry
+│       └── tasks.tsx      # Task Pool — Feature 1
+├── src/
+│   ├── types/index.ts     # shared TypeScript types
+│   ├── constants/legal.ts # TOS/Privacy version numbers + hosted URLs
+│   ├── logic/             # pure TS business logic (no React)
+│   │   └── todos.ts       # bucket helpers, formatMinutes
+│   └── db/
+│       ├── sqlite.ts      # expo-sqlite: getDb(), initDb()
+│       ├── dao.ts         # local read/write + sync queue stub
+│       └── supabase.ts    # typed Supabase client
+├── supabase/migrations/   # SQL migrations (run manually in Supabase dashboard)
+├── legal/                 # draft legal docs (review before App Store)
+├── assets/                # icons, splash
+├── .env.example           # env var template (copy to .env.local)
+└── SCAFFOLD_NOTES.md      # how to run, what's stubbed, next steps
+```
 
 ## File Anna should never lose
 - [BUILD_ROADMAP.md](BUILD_ROADMAP.md) — the product contract
