@@ -706,6 +706,7 @@ const styles = StyleSheet.create({
   durationChipText: { color: '#0F172A', fontSize: 14, fontWeight: '500' },
   durationChipTextSelected: { color: '#F97316' },
   typeATimeChip: {
+    width: 128,
     height: 38,
     paddingVertical: 8,
     paddingHorizontal: 21,
@@ -718,15 +719,15 @@ const styles = StyleSheet.create({
   },
   typeATimeChipText: { color: '#64758B', fontSize: 14, fontWeight: '500' },
   timeInlineInput: {
+    width: 128,
     height: 38,
     borderRadius: 9999,
     borderWidth: 1,
     borderColor: '#F97316',
     backgroundColor: '#FFF0E5',
-    paddingHorizontal: 16,
+    paddingHorizontal: 21,
     fontSize: 14,
     color: '#0F172A',
-    minWidth: 100,
     textAlign: 'center',
     // @ts-ignore — web-only: suppress browser default focus outline
     outlineWidth: 0,
