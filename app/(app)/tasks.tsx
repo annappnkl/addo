@@ -748,7 +748,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: C.Border },
 
   // ── Wide three-column layout
-  bucketsContainer: { paddingHorizontal: 40, paddingTop: 16 },
+  bucketsContainer: { paddingHorizontal: 80, paddingTop: 16 },
   bucketsContainerWide: { flexDirection: 'row', gap: 26, alignItems: 'flex-start' },
   bucketSection: {},
   bucketSectionWide: { flex: 1 },
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  taskName: { flex: 1, fontSize: 20, fontWeight: '400', color: '#000000' },
+  taskName: { flex: 1, fontSize: 16, fontWeight: '400', color: '#000000' },
   taskDuration: { fontSize: 14, fontWeight: '500', color: '#8C8C8C' },
 
   // ── Chevron + delete icons row
