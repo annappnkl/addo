@@ -12,10 +12,34 @@ import {
   Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../../src/db/supabase';
 import { getTodosByUser, insertTodo, deleteTodo, updateTodo } from '../../src/db/dao';
 import { bucketTotalMinutes, formatMinutes, moveBucketCircular, splitByDuration } from '../../src/logic/todos';
 import type { Bucket, Todo } from '../../src/types';
+
+// ─── Asset icons (paths from assets/*.svg, viewBox matches Material Symbols) ──
+function ArrowLeftIcon({ color, size = 20 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 -960 960 960">
+      <Path d="M532.5-346 398-480l134.5-134v268Z" fill={color} />
+    </Svg>
+  );
+}
+function ArrowRightIcon({ color, size = 20 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 -960 960 960">
+      <Path d="M428-346v-268l134 134-134 134Z" fill={color} />
+    </Svg>
+  );
+}
+function TrashIcon({ color, size = 20 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 -960 960 960">
+      <Path d="M313.5-177q-23.97 0-40.73-16.77Q256-210.53 256-234.5v-484h-39.5v-25.33H361V-771h238.5v27H744v25.5h-39.5v484.23q0 24.21-16.53 40.74T647-177H313.5ZM679-718.5H281.5v484q0 14 9 23t23 9H647q12 0 22-10t10-22v-484ZM404.5-282H430v-357.5h-25.5V-282Zm126 0H556v-357.5h-25.5V-282Zm-249-436.5v516-516Z" fill={color} />
+    </Svg>
+  );
+}
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -204,19 +228,19 @@ function TaskCard({
         onPress={() => onMoveBucket('left')}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Feather name="chevron-left" size={20} color={C.TextSecondary} />
+        <ArrowLeftIcon color={C.TextSecondary} size={20} />
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => onMoveBucket('right')}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Feather name="chevron-right" size={20} color={C.TextSecondary} />
+        <ArrowRightIcon color={C.TextSecondary} size={20} />
       </TouchableOpacity>
       <TouchableOpacity
         onPress={onDelete}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Feather name="trash-2" size={20} color={C.Destructive} />
+        <TrashIcon color={C.Destructive} size={20} />
       </TouchableOpacity>
     </View>
   );
