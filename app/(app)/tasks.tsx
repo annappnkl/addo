@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   taskName: { flex: 1, fontSize: 16, fontWeight: '400', color: '#000000' },
-  taskDuration: { fontSize: 14, fontWeight: '500', color: '#8C8C8C' },
+  taskDuration: { fontSize: 12, fontWeight: '300', color: '#8C8C8C' },
 
   // ── Chevron + delete icons row
   iconsRow: {
