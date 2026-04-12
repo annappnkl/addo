@@ -84,7 +84,11 @@ export default function RouletteScreen() {
 }
 
 function RouletteWorkMode() {
-  const config = getSessionConfig()!;
+  // Read config once on mount. getSessionConfig() can return null after the
+  // end-session flow clears the store, but RouletteScreen's guard guarantees
+  // it was non-null before this component mounted — safe to freeze in a ref.
+  const configRef = useRef(getSessionConfig());
+  const config = configRef.current!;
 
   // ── Pool state
   const [pool, setPool] = useState<PoolItem[]>([]);
