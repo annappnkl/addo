@@ -500,11 +500,7 @@ export default function TasksScreen() {
           {/* Pill-shaped input + submit button */}
           <View style={styles.inputBar}>
             <TextInput
-              style={[
-                styles.inputBarText,
-                // @ts-ignore — web-only: suppress browser focus outline
-                Platform.OS === 'web' && { outlineWidth: 0 },
-              ]}
+              style={styles.inputBarText}
               placeholder="What is there to do?"
               placeholderTextColor="#64758B"
               value={title}
@@ -521,12 +517,8 @@ export default function TasksScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Chips — bucket group + duration group in one scroll */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsRow}
-          >
+          {/* Chips — bucket group + duration group, container hugs content */}
+          <View style={styles.chipsRow}>
             <View style={styles.chipsGroup}>
               {BUCKETS.map((b) => (
                 <TouchableOpacity
@@ -582,7 +574,7 @@ export default function TasksScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          </ScrollView>
+          </View>
         </View>
 
         {/* ── Wide: classic divider → three columns ─────────────────────── */}
@@ -647,8 +639,6 @@ const styles = StyleSheet.create({
   // ── Add task area
   addArea: {
     alignSelf: 'center',
-    width: '100%',
-    maxWidth: 760,
     paddingHorizontal: 40,
     paddingTop: 32,
     marginBottom: 24,
@@ -672,6 +662,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0F172A',
     backgroundColor: 'transparent',
+    // @ts-ignore — web-only: suppress browser default focus outline
+    outlineWidth: 0,
   },
   submitCircle: {
     width: 30,
@@ -735,6 +727,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#0F172A',
     minWidth: 100,
+    textAlign: 'center',
+    // @ts-ignore — web-only: suppress browser default focus outline
+    outlineWidth: 0,
   },
   pillsScroll: { flexGrow: 0 },
   pillsRow: { flexDirection: 'row', gap: 8 },
