@@ -252,7 +252,9 @@ function TaskCard({
     </View>
   );
 
-  const rowStyle = styles.taskRow;
+  const rowStyle = isExpanded
+    ? [styles.taskRow, styles.taskRowExpanded]
+    : styles.taskRow;
 
   // ── Web ──────────────────────────────────────────────────────────────────────
   if (Platform.OS === 'web') {
@@ -831,6 +833,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'transparent',
+  },
+  taskRowExpanded: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
   },
   // Single-line header inside a row (collapsed tap area on web, expanded collapse trigger)
   taskRowHeader: {
