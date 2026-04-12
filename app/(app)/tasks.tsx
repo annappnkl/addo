@@ -22,14 +22,14 @@ import type { Bucket, Todo } from '../../src/types';
 function ArrowLeftIcon({ color, size = 20 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 -960 960 960">
-      <Path d="M532.5-346 398-480l134.5-134v268Z" fill={color} />
+      <Path d="m559.5-279-201-201 201-201 18 18.5L395-480l182.5 182.5-18 18.5Z" fill={color} />
     </Svg>
   );
 }
 function ArrowRightIcon({ color, size = 20 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 -960 960 960">
-      <Path d="M428-346v-268l134 134-134 134Z" fill={color} />
+      <Path d="M541-480 358.5-662.5l18-18.5 201 201-201 201-18-18.5L541-480Z" fill={color} />
     </Svg>
   );
 }
@@ -416,9 +416,7 @@ export default function TasksScreen() {
   // Mobile tab state
   const [activeBucket, setActiveBucket] = useState<Bucket>('Must');
 
-  const canAdd =
-    title.trim().length > 0 &&
-    (selectedDuration !== null || (showCustomDuration && customDurationInput.trim().length > 0));
+  const canAdd = title.trim().length > 0;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
