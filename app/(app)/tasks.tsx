@@ -170,7 +170,13 @@ function TaskCard({
     // After autoFocus fires, move cursor to end of existing text.
     requestAnimationFrame(() => {
       const len = draft.title.length;
-      titleInputRef.current?.setNativeProps({ selection: { start: len, end: len } });
+      if (Platform.OS === 'web') {
+        // On web, autoFocus will have made the textarea the active element.
+        const el = document.activeElement as HTMLTextAreaElement | null;
+        el?.setSelectionRange(len, len);
+      } else {
+        titleInputRef.current?.setNativeProps({ selection: { start: len, end: len } });
+      }
     });
   }, [isExpanded]); // eslint-disable-line react-hooks/exhaustive-deps
 
