@@ -333,7 +333,7 @@ function BucketSection({
       {!hideHeader && (
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionLabel}>{bucket}</Text>
-          <Text style={styles.sectionTotal}>{formatMinutes(bucketTotalMinutes(todos, bucket))}</Text>
+          {/* <Text style={styles.sectionTotal}>{formatMinutes(bucketTotalMinutes(todos, bucket))}</Text> */}
         </View>
       )}
 
