@@ -1,7 +1,7 @@
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 const C = {
-  Bg: '#F7F6F3',
+  Bg: '#FFFFFF',
   TextPrimary: '#1A1A1A',
   TextSecondary: '#6B7280',
 } as const;
