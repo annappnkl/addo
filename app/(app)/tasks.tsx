@@ -202,7 +202,7 @@ function TaskCard({
   if (Platform.OS === 'web') {
     if (isExpanded) {
       return (
-        <View style={rowStyle}>
+        <Pressable style={[rowStyle, { cursor: 'default' } as object]} onPress={() => {}}>
           <View style={styles.taskRowHeader}>
             <TextInput
               style={styles.taskNameInput}
@@ -221,7 +221,7 @@ function TaskCard({
             draft={draft}
             onChange={onDraftChange}
           />
-        </View>
+        </Pressable>
       );
     }
 
@@ -242,7 +242,7 @@ function TaskCard({
   // ── Native ───────────────────────────────────────────────────────────────────
   if (isExpanded) {
     return (
-      <View style={rowStyle}>
+      <Pressable style={rowStyle} onPress={() => {}}>
         <View style={styles.taskRowHeader}>
           <TextInput
             style={styles.taskNameInput}
@@ -261,7 +261,7 @@ function TaskCard({
           draft={draft}
           onChange={onDraftChange}
         />
-      </View>
+      </Pressable>
     );
   }
 
