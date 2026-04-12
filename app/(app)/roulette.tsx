@@ -545,9 +545,9 @@ function ItemCard({ item, now }: { item: PoolItem; now: number }) {
 
   const sq = item.item as SideQuest;
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, styles.cardSideQuest]}>
       <View style={[styles.pill, styles.pillSideQuest]}>
-        <Text style={[styles.pillText, styles.pillTextAccent]}>Side Quest</Text>
+        <Text style={[styles.pillText, styles.pillTextSideQuest]}>🎲 Side Quest</Text>
       </View>
       <Text style={styles.display}>{sq.title}</Text>
       <Text style={styles.subheadingSecondary}>~ {sq.duration_minutes} min</Text>
@@ -572,8 +572,10 @@ function BreakCard({
   onDone: () => void;
 }) {
   return (
-    <View style={styles.card}>
-      <Text style={styles.breakLabel}>Break time</Text>
+    <View style={[styles.card, styles.cardBreak]}>
+      <View style={[styles.pill, styles.pillBreak]}>
+        <Text style={[styles.pillText, styles.pillTextBreak]}>🌿 Break time</Text>
+      </View>
       <Text style={styles.breakBody}>
         {"You've been working for "}{elapsedMin}{" min. Take a breather."}
       </Text>
@@ -651,6 +653,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     gap: 12,
   },
+  cardSideQuest: { backgroundColor: '#FFF0E6' },
+  cardBreak: { backgroundColor: '#F0FFF4' },
 
   // ── Pill label
   pill: {
@@ -660,9 +664,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
   },
-  pillSideQuest: { backgroundColor: C.AccentLight },
+  pillSideQuest: { backgroundColor: '#FFD9B8', borderRadius: 999 },
+  pillBreak: { backgroundColor: '#DCFCE7', borderRadius: 999 },
   pillText: { fontSize: 13, color: C.Accent, fontWeight: '600' },
-  pillTextAccent: { color: C.Accent },
+  pillTextSideQuest: { color: '#F97316' },
+  pillTextBreak: { color: '#16A34A' },
 
   // ── Typography
   display: { fontSize: 32, fontWeight: '700', color: C.TextPrimary },
@@ -672,7 +678,6 @@ const styles = StyleSheet.create({
   link: { fontSize: 13, color: C.Accent, fontWeight: '600' },
 
   // ── Break card extras
-  breakLabel: { fontSize: 22, fontWeight: '700', color: C.TextPrimary },
   breakBody: { fontSize: 15, color: C.TextSecondary },
   breakSqWrap: { gap: 4, marginTop: 8 },
   breakBtn: { marginTop: 8 },
