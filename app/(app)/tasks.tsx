@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -89,20 +90,13 @@ function draftFromTodo(todo: Todo): EditDraft {
 // ─── Shared edit form (rendered inside expanded row) ──────────────────────────
 function EditForm({
   draft,
-  isSaving,
   onChange,
-  onSave,
-  onCancel,
 }: {
   draft: EditDraft;
-  isSaving: boolean;
   onChange: (d: EditDraft) => void;
-  onSave: () => void;
-  onCancel: () => void;
 }) {
   const [titleFocused, setTitleFocused] = useState(false);
   const [notesFocused, setNotesFocused] = useState(false);
-  const canSave = draft.title.trim().length > 0 && draft.duration !== null;
 
   return (
     <View style={styles.editForm}>
@@ -137,26 +131,6 @@ function EditForm({
         ))}
       </ScrollView>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.pillsScroll}
-        contentContainerStyle={styles.pillsRow}
-      >
-        {BUCKETS.map((b) => (
-          <TouchableOpacity
-            key={b}
-            style={[styles.pill, draft.bucket === b && styles.pillSelected]}
-            onPress={() => onChange({ ...draft, bucket: b })}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.pillText, draft.bucket === b && styles.pillTextSelected]}>
-              {b}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
       <TextInput
         style={[styles.editInput, styles.editNotesInput, notesFocused && styles.editInputFocused]}
         value={draft.notes}
@@ -168,22 +142,6 @@ function EditForm({
         onFocus={() => setNotesFocused(true)}
         onBlur={() => setNotesFocused(false)}
       />
-
-      <View style={styles.editActions}>
-        <TouchableOpacity
-          style={[styles.editSaveBtn, !canSave && styles.editSaveBtnDisabled]}
-          onPress={onSave}
-          disabled={isSaving || !canSave}
-          activeOpacity={0.85}
-        >
-          <Text style={[styles.editSaveBtnText, !canSave && styles.editSaveBtnTextDisabled]}>
-            {isSaving ? 'Saving…' : 'Save'}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.editCancelBtn} onPress={onCancel} activeOpacity={0.7}>
-          <Text style={styles.editCancelBtnText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -267,10 +225,7 @@ function TaskCard({
           </TouchableOpacity>
           <EditForm
             draft={draft}
-            isSaving={isSaving}
             onChange={onDraftChange}
-            onSave={onSave}
-            onCancel={onTap}
           />
         </View>
       );
@@ -300,10 +255,7 @@ function TaskCard({
         </TouchableOpacity>
         <EditForm
           draft={draft}
-          isSaving={isSaving}
           onChange={onDraftChange}
-          onSave={onSave}
-          onCancel={onTap}
         />
       </View>
     );
@@ -478,8 +430,9 @@ export default function TasksScreen() {
 
   function handleToggle(todo: Todo) {
     if (expandedId === todo.id) {
-      setExpandedId(null);
+      void handleSave();
     } else {
+      if (expandedId) void handleSave();
       setExpandedId(todo.id);
       setSelectedTaskId(null);
       setDraft(draftFromTodo(todo));
@@ -520,6 +473,7 @@ export default function TasksScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
+      <Pressable style={{ flex: 1 }} onPress={() => { if (expandedId) void handleSave(); }}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -656,6 +610,7 @@ export default function TasksScreen() {
           </>
         )}
       </ScrollView>
+      </Pressable>
     </SafeAreaView>
   );
 }
