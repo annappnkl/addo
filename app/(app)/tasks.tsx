@@ -528,6 +528,7 @@ export default function TasksScreen() {
               value={title}
               onChangeText={setTitle}
               returnKeyType="done"
+              onSubmitEditing={handleAdd}
             />
             <TouchableOpacity
               style={[styles.submitCircle, { opacity: canAdd ? 1 : 0.35 }]}
