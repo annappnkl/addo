@@ -19,7 +19,7 @@ import type { Bucket, Todo } from '../../src/types';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  Bg: '#F7F6F3',
+  Bg: '#FFFFFF',
   Surface: '#FFFFFF',
   SurfaceAlt: '#F0EEE9',
   TextPrimary: '#1A1A1A',
@@ -168,7 +168,6 @@ function EditForm({
 function TaskCard({
   todo,
   isExpanded,
-  isFirst,
   draft,
   isSaving,
   onTap,
@@ -184,7 +183,6 @@ function TaskCard({
 }: {
   todo: Todo;
   isExpanded: boolean;
-  isFirst: boolean;
   draft: EditDraft;
   isSaving: boolean;
   onTap: () => void;
@@ -223,7 +221,7 @@ function TaskCard({
     </View>
   );
 
-  const rowStyle = [styles.taskRow, isFirst && styles.taskRowFirst];
+  const rowStyle = styles.taskRow;
 
   // ── Web ──────────────────────────────────────────────────────────────────────
   if (Platform.OS === 'web') {
@@ -347,7 +345,6 @@ function BucketSection({
             key={todo.id}
             todo={todo}
             isExpanded={expandedId === todo.id}
-            isFirst={index === 0}
             draft={draft}
             isSaving={isSaving}
             onTap={() => onToggle(todo)}
@@ -377,7 +374,6 @@ export default function TasksScreen() {
 
   // Add form
   const [title, setTitle] = useState('');
-  const [titleFocused, setTitleFocused] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption | null>(null);
   const [showCustomDuration, setShowCustomDuration] = useState(false);
   const [customDurationInput, setCustomDurationInput] = useState('');
@@ -501,52 +497,77 @@ export default function TasksScreen() {
       >
         {/* ── Add task area ──────────────────────────────────────────────── */}
         <View style={styles.addArea}>
-          <TextInput
-            style={[styles.titleInput, titleFocused && styles.titleInputFocused]}
-            placeholder="What needs doing?"
-            placeholderTextColor={C.TextDisabled}
-            value={title}
-            onChangeText={setTitle}
-            onFocus={() => setTitleFocused(true)}
-            onBlur={() => setTitleFocused(false)}
-            returnKeyType="done"
-          />
+          {/* Pill-shaped input + submit button */}
+          <View style={styles.inputBar}>
+            <TextInput
+              style={styles.inputBarText}
+              placeholder="What is there to do?"
+              placeholderTextColor="#64758B"
+              value={title}
+              onChangeText={setTitle}
+              returnKeyType="done"
+            />
+            <TouchableOpacity
+              style={[styles.submitCircle, { opacity: canAdd ? 1 : 0.4 }]}
+              onPress={handleAdd}
+              disabled={!canAdd || adding}
+              activeOpacity={0.85}
+            >
+              <Feather name="chevron-up" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
 
+          {/* Chips — bucket group + duration group in one scroll */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={styles.pillsScroll}
-            contentContainerStyle={styles.pillsRow}
+            contentContainerStyle={styles.chipsRow}
           >
-            {DURATION_OPTIONS.map((d) => (
+            <View style={styles.chipsGroup}>
+              {BUCKETS.map((b) => (
+                <TouchableOpacity
+                  key={b}
+                  style={[styles.bucketChip, selectedBucket === b && styles.bucketChipSelected]}
+                  onPress={() => setSelectedBucket(b)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.bucketChipText, selectedBucket === b && styles.bucketChipTextSelected]}>
+                    {b}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.chipsGroup}>
+              {DURATION_OPTIONS.map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  style={[styles.durationChip, selectedDuration === d && styles.durationChipSelected]}
+                  onPress={() => {
+                    setSelectedDuration(selectedDuration === d ? null : d);
+                    setShowCustomDuration(false);
+                    setCustomDurationInput('');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.durationChipText, selectedDuration === d && styles.durationChipTextSelected]}>
+                    {d}'
+                  </Text>
+                </TouchableOpacity>
+              ))}
               <TouchableOpacity
-                key={d}
-                style={[styles.pill, selectedDuration === d && styles.pillSelected]}
+                style={[styles.typeATimeChip, showCustomDuration && styles.typeATimeChipSelected]}
                 onPress={() => {
-                  setSelectedDuration(selectedDuration === d ? null : d);
-                  setShowCustomDuration(false);
-                  setCustomDurationInput('');
+                  setShowCustomDuration(true);
+                  setSelectedDuration(null);
                 }}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.pillText, selectedDuration === d && styles.pillTextSelected]}>
-                  {d} min
+                <Text style={[styles.typeATimeChipText, showCustomDuration && styles.typeATimeChipTextSelected]}>
+                  Type a time
                 </Text>
               </TouchableOpacity>
-            ))}
-            {/* "Time" pill — opens custom numeric input */}
-            <TouchableOpacity
-              style={[styles.pill, showCustomDuration && styles.pillSelected]}
-              onPress={() => {
-                setShowCustomDuration(true);
-                setSelectedDuration(null);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.pillText, showCustomDuration && styles.pillTextSelected]}>
-                Time
-              </Text>
-            </TouchableOpacity>
+            </View>
           </ScrollView>
 
           {showCustomDuration && (
@@ -559,37 +580,6 @@ export default function TasksScreen() {
               keyboardType="numeric"
             />
           )}
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.pillsScroll}
-            contentContainerStyle={styles.pillsRow}
-          >
-            {BUCKETS.map((b) => (
-              <TouchableOpacity
-                key={b}
-                style={[styles.pill, selectedBucket === b && styles.pillSelected]}
-                onPress={() => setSelectedBucket(b)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.pillText, selectedBucket === b && styles.pillTextSelected]}>
-                  {b}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <TouchableOpacity
-            style={[styles.addButton, !canAdd && styles.addButtonDisabled]}
-            onPress={handleAdd}
-            disabled={!canAdd || adding}
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.addButtonText, !canAdd && styles.addButtonTextDisabled]}>
-              {adding ? 'Adding…' : 'Add task'}
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* ── Wide: classic divider → three columns ─────────────────────── */}
@@ -656,19 +646,82 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
+    marginBottom: 66,
     gap: 12,
   },
-  titleInput: {
-    backgroundColor: C.Surface,
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F3F3F3',
+    borderRadius: 9999,
     borderWidth: 1,
-    borderColor: C.Border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 48,
-    fontSize: 15,
-    color: C.TextPrimary,
+    borderColor: '#CBD5E1',
+    height: 43,
+    paddingLeft: 24,
+    paddingRight: 4,
+    paddingVertical: 8,
   },
-  titleInputFocused: { borderColor: C.Accent },
+  inputBarText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#0F172A',
+    backgroundColor: 'transparent',
+  },
+  submitCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F97316',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 40,
+  },
+  chipsGroup: { flexDirection: 'row', gap: 6 },
+  bucketChip: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 9999,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  bucketChipSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
+  bucketChipText: { color: '#0F172A', fontSize: 14, fontWeight: '500' },
+  bucketChipTextSelected: { color: '#F97316' },
+  durationChip: {
+    width: 64,
+    height: 38,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 9999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  durationChipSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
+  durationChipText: { color: '#0F172A', fontSize: 14, fontWeight: '500' },
+  durationChipTextSelected: { color: '#F97316' },
+  typeATimeChip: {
+    height: 38,
+    paddingVertical: 8,
+    paddingHorizontal: 21,
+    backgroundColor: '#F3F3F3',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  typeATimeChipSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
+  typeATimeChipText: { color: '#64758B', fontSize: 14, fontWeight: '500' },
+  typeATimeChipTextSelected: { color: '#F97316' },
   pillsScroll: { flexGrow: 0 },
   pillsRow: { flexDirection: 'row', gap: 8 },
   pill: {
@@ -693,22 +746,11 @@ const styles = StyleSheet.create({
     color: C.TextPrimary,
     width: 120,
   },
-  addButton: {
-    backgroundColor: C.Accent,
-    borderRadius: 28,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButtonDisabled: { backgroundColor: C.Border },
-  addButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  addButtonTextDisabled: { color: C.TextDisabled },
-
   divider: { height: 1, backgroundColor: C.Border },
 
   // ── Wide three-column layout
   bucketsContainer: { paddingHorizontal: 20, paddingTop: 16 },
-  bucketsContainerWide: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  bucketsContainerWide: { flexDirection: 'row', gap: 26, alignItems: 'flex-start' },
   bucketSection: {},
   bucketSectionWide: { flex: 1 },
   bucketSectionNarrow: {},
@@ -716,10 +758,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingLeft: 16,
+    paddingRight: 26,
+    borderBottomWidth: 1,
+    borderBottomColor: '#D8D8D8',
   },
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: C.TextPrimary },
-  sectionTotal: { fontSize: 13, color: C.TextSecondary },
+  sectionLabel: { color: '#8C8C8C', fontSize: 14, fontWeight: '500' },
+  sectionTotal: { color: '#8C8C8C', fontSize: 14, fontWeight: '500' },
   emptyText: {
     fontSize: 15,
     color: C.TextSecondary,
@@ -749,17 +796,20 @@ const styles = StyleSheet.create({
 
   // ── Flat task rows (both layouts)
   taskRow: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: C.Border,
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingLeft: 32,
+    paddingRight: 42,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E6E6E6',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4.6,
+    elevation: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
     backgroundColor: 'transparent',
-  },
-  taskRowFirst: {
-    borderTopWidth: 1,
-    borderTopColor: C.Border,
   },
   // Single-line header inside a row (collapsed tap area on web, expanded collapse trigger)
   taskRowHeader: {
@@ -777,8 +827,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  taskName: { flex: 1, fontSize: 17, fontWeight: '600', color: C.TextPrimary },
-  taskDuration: { fontSize: 13, color: C.TextSecondary },
+  taskName: { flex: 1, fontSize: 20, fontWeight: '400', color: '#000000' },
+  taskDuration: { fontSize: 14, fontWeight: '500', color: '#8C8C8C' },
 
   // ── Chevron + delete icons row
   iconsRow: {
