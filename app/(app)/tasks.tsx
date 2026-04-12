@@ -748,7 +748,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: C.Border },
 
   // ── Wide three-column layout
-  bucketsContainer: { paddingHorizontal: 20, paddingTop: 16 },
+  bucketsContainer: { paddingHorizontal: 40, paddingTop: 16 },
   bucketsContainerWide: { flexDirection: 'row', gap: 26, alignItems: 'flex-start' },
   bucketSection: {},
   bucketSectionWide: { flex: 1 },
