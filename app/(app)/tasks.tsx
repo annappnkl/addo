@@ -222,26 +222,33 @@ function TaskCard({
 }) {
   const showIcons = (isHovered || isSelected) && !isExpanded;
 
-  const iconsRow = (
-    <View style={[styles.iconsRow, { opacity: showIcons ? 1 : 0 }]}>
-      <TouchableOpacity
-        onPress={() => onMoveBucket('left')}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <ArrowLeftIcon color={C.TextSecondary} size={16} />
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => onMoveBucket('right')}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <ArrowRightIcon color={C.TextSecondary} size={16} />
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={onDelete}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <TrashIcon color={C.Destructive} size={16} />
-      </TouchableOpacity>
+  // Right-side slot shared by web and native collapsed renders.
+  // Duration text and icons occupy the same space; opacity toggles between them.
+  const rightSlot = (
+    <View style={styles.rightSlot}>
+      <Text style={[styles.taskDuration, { opacity: showIcons ? 0 : 1 }]}>
+        {formatMinutes(todo.estimated_minutes)}
+      </Text>
+      <View style={[styles.iconsRow, { opacity: showIcons ? 1 : 0 }]}>
+        <TouchableOpacity
+          onPress={() => onMoveBucket('left')}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowLeftIcon color={C.TextSecondary} size={16} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => onMoveBucket('right')}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowRightIcon color={C.TextSecondary} size={16} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onDelete}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <TrashIcon color={C.Destructive} size={16} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -275,9 +282,8 @@ function TaskCard({
       >
         <TouchableOpacity onPress={onTap} style={styles.taskRowTapArea} activeOpacity={0.8}>
           <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
-          <Text style={[styles.taskDuration, showIcons && { opacity: 0 }]}>{formatMinutes(todo.estimated_minutes)}</Text>
         </TouchableOpacity>
-        {iconsRow}
+        {rightSlot}
       </HoverableView>
     );
   }
@@ -305,9 +311,8 @@ function TaskCard({
     <View style={rowStyle}>
       <TouchableOpacity onPress={onSelect} style={styles.taskRowTapArea} activeOpacity={0.8}>
         <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
-        <Text style={[styles.taskDuration, showIcons && { opacity: 0 }]}>{formatMinutes(todo.estimated_minutes)}</Text>
       </TouchableOpacity>
-      {showIcons && iconsRow}
+      {rightSlot}
     </View>
   );
 }
@@ -836,22 +841,32 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     width: '100%',
   },
-  // Tap area: name + duration on one line, flex:1 to push icons right
+  // Tap area: name only, flex:1
   taskRowTapArea: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
   taskName: { flex: 1, fontSize: 16, fontWeight: '400', color: '#000000' },
   taskDuration: { fontSize: 12, fontWeight: '300', color: '#8C8C8C' },
 
-  // ── Chevron + delete icons row
+  // Right slot: duration text and icons occupy the same space, opacity-toggled
+  rightSlot: {
+    width: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Icons absolutely fill rightSlot so they overlay the duration text exactly
   iconsRow: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
-    marginLeft: 8,
+    justifyContent: 'center',
   },
 
   // ── Edit form (expands within the row)
