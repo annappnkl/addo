@@ -784,34 +784,35 @@ const styles = StyleSheet.create({
 
   // ── Flat task rows (both layouts)
   taskRow: {
-    paddingTop: 20,
-    paddingBottom: 20,
     paddingLeft: 16,
     paddingRight: 16,
     borderBottomWidth: 0.5,
     borderBottomColor: '#E6E6E6',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     backgroundColor: 'transparent',
   },
   taskRowExpanded: {
     flexDirection: 'column',
     alignItems: 'stretch',
   },
-  // Single-line header inside a row (collapsed tap area on web, expanded collapse trigger)
+  // Single-line header inside an expanded row
   taskRowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     flex: 1,
+    paddingTop: 20,
     marginBottom: 12,
     width: '100%',
   },
-  // Tap area: name only, flex:1
+  // Tap area: fills full row height so entire row is clickable
   taskRowTapArea: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   taskName: { flex: 1, fontSize: 16, fontWeight: '400', color: '#000000' },
   taskNameInput: {
@@ -832,6 +833,8 @@ const styles = StyleSheet.create({
     width: 80,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   // Icons absolutely fill rightSlot so they overlay the duration text exactly
   iconsRow: {
@@ -847,7 +850,7 @@ const styles = StyleSheet.create({
   },
 
   // ── Edit form (expands within the row)
-  editForm: { gap: 10, width: '100%', paddingTop: 4 },
+  editForm: { gap: 10, width: '100%', paddingTop: 4, paddingBottom: 20 },
   editInput: {
     backgroundColor: C.Surface,
     borderWidth: 1,
