@@ -62,7 +62,7 @@ function draftFromTodo(todo: Todo): EditDraft {
   };
 }
 
-// ─── Shared edit form (rendered inside expanded card) ─────────────────────────
+// ─── Shared edit form (rendered inside expanded row) ──────────────────────────
 function EditForm({
   draft,
   isSaving,
@@ -163,6 +163,7 @@ function EditForm({
 function TaskCard({
   todo,
   isExpanded,
+  isFirst,
   draft,
   isSaving,
   onTap,
@@ -178,6 +179,7 @@ function TaskCard({
 }: {
   todo: Todo;
   isExpanded: boolean;
+  isFirst: boolean;
   draft: EditDraft;
   isSaving: boolean;
   onTap: () => void;
@@ -191,14 +193,7 @@ function TaskCard({
   onSelect: () => void;
   onMoveBucket: (direction: 'left' | 'right') => void;
 }) {
-  const showIcons = isHovered || isSelected;
-
-  const expandedHeader = (
-    <TouchableOpacity onPress={onTap} style={styles.expandedHeader} activeOpacity={0.7}>
-      <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
-      <Feather name="chevron-up" size={16} color={C.TextSecondary} />
-    </TouchableOpacity>
-  );
+  const showIcons = (isHovered || isSelected) && !isExpanded;
 
   const iconsRow = (
     <View style={styles.iconsRow}>
@@ -223,12 +218,17 @@ function TaskCard({
     </View>
   );
 
+  const rowStyle = [styles.taskRow, isFirst && styles.taskRowFirst];
+
   // ── Web ──────────────────────────────────────────────────────────────────────
   if (Platform.OS === 'web') {
     if (isExpanded) {
       return (
-        <View style={styles.cardWeb}>
-          {expandedHeader}
+        <View style={rowStyle}>
+          <TouchableOpacity onPress={onTap} style={styles.taskRowHeader} activeOpacity={0.7}>
+            <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
+            <Feather name="chevron-up" size={16} color={C.TextSecondary} />
+          </TouchableOpacity>
           <EditForm
             draft={draft}
             isSaving={isSaving}
@@ -242,20 +242,15 @@ function TaskCard({
 
     return (
       <HoverableView
-        style={styles.cardWeb}
+        style={rowStyle}
         onMouseEnter={onHoverIn}
         onMouseLeave={onHoverOut}
       >
-        <View style={styles.cardRow}>
-          <TouchableOpacity onPress={onTap} style={styles.cardText} activeOpacity={0.8}>
-            <Text style={styles.taskName}>{todo.title}</Text>
-            <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
-            {todo.notes ? (
-              <Text style={styles.taskNotes} numberOfLines={1}>{todo.notes}</Text>
-            ) : null}
-          </TouchableOpacity>
-          {showIcons && iconsRow}
-        </View>
+        <TouchableOpacity onPress={onTap} style={styles.taskRowTapArea} activeOpacity={0.8}>
+          <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
+          <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
+        </TouchableOpacity>
+        {showIcons && iconsRow}
       </HoverableView>
     );
   }
@@ -263,8 +258,11 @@ function TaskCard({
   // ── Native ───────────────────────────────────────────────────────────────────
   if (isExpanded) {
     return (
-      <View style={styles.cardNative}>
-        {expandedHeader}
+      <View style={rowStyle}>
+        <TouchableOpacity onPress={onTap} style={styles.taskRowHeader} activeOpacity={0.7}>
+          <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
+          <Feather name="chevron-up" size={16} color={C.TextSecondary} />
+        </TouchableOpacity>
         <EditForm
           draft={draft}
           isSaving={isSaving}
@@ -277,17 +275,12 @@ function TaskCard({
   }
 
   return (
-    <View style={styles.cardNative}>
-      <View style={styles.cardRow}>
-        <TouchableOpacity onPress={onSelect} style={styles.cardText} activeOpacity={0.8}>
-          <Text style={styles.taskName}>{todo.title}</Text>
-          <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
-          {todo.notes ? (
-            <Text style={styles.taskNotes} numberOfLines={1}>{todo.notes}</Text>
-          ) : null}
-        </TouchableOpacity>
-        {showIcons && iconsRow}
-      </View>
+    <View style={rowStyle}>
+      <TouchableOpacity onPress={onSelect} style={styles.taskRowTapArea} activeOpacity={0.8}>
+        <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
+        <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
+      </TouchableOpacity>
+      {showIcons && iconsRow}
     </View>
   );
 }
@@ -300,6 +293,7 @@ function BucketSection({
   draft,
   isSaving,
   isWide,
+  hideHeader,
   onToggle,
   onDelete,
   onDraftChange,
@@ -317,6 +311,7 @@ function BucketSection({
   draft: EditDraft;
   isSaving: boolean;
   isWide: boolean;
+  hideHeader?: boolean;
   onToggle: (todo: Todo) => void;
   onDelete: (id: string) => void;
   onDraftChange: (d: EditDraft) => void;
@@ -332,19 +327,22 @@ function BucketSection({
 
   return (
     <View style={[styles.bucketSection, isWide ? styles.bucketSectionWide : styles.bucketSectionNarrow]}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionLabel}>{bucket}</Text>
-        <Text style={styles.sectionTotal}>{formatMinutes(bucketTotalMinutes(todos, bucket))}</Text>
-      </View>
+      {!hideHeader && (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>{bucket}</Text>
+          <Text style={styles.sectionTotal}>{formatMinutes(bucketTotalMinutes(todos, bucket))}</Text>
+        </View>
+      )}
 
       {bucketTodos.length === 0 ? (
         <Text style={styles.emptyText}>Nothing here yet.</Text>
       ) : (
-        bucketTodos.map((todo) => (
+        bucketTodos.map((todo, index) => (
           <TaskCard
             key={todo.id}
             todo={todo}
             isExpanded={expandedId === todo.id}
+            isFirst={index === 0}
             draft={draft}
             isSaving={isSaving}
             onTap={() => onToggle(todo)}
@@ -388,6 +386,9 @@ export default function TasksScreen() {
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
+  // Mobile tab state
+  const [activeBucket, setActiveBucket] = useState<Bucket>('Must');
+
   const canAdd = title.trim().length > 0 && selectedDuration !== null;
 
   useEffect(() => {
@@ -426,7 +427,6 @@ export default function TasksScreen() {
     if (!todo) return;
     const newBucket = moveBucketCircular(todo.bucket, direction);
     await updateTodo(id, { bucket: newBucket });
-    // Task moved to a different section — clear selection so icons don't appear in the old column
     setSelectedTaskId(null);
     if (userId) await loadTodos(userId);
   }
@@ -440,7 +440,7 @@ export default function TasksScreen() {
       setExpandedId(null);
     } else {
       setExpandedId(todo.id);
-      setSelectedTaskId(null); // clear selection when entering edit mode
+      setSelectedTaskId(null);
       setDraft(draftFromTodo(todo));
     }
   }
@@ -458,6 +458,24 @@ export default function TasksScreen() {
     if (userId) await loadTodos(userId);
     setEditSaving(false);
   }
+
+  // Shared BucketSection props
+  const sharedSectionProps = {
+    todos,
+    expandedId,
+    draft,
+    isSaving: editSaving,
+    onToggle: handleToggle,
+    onDelete: handleDelete,
+    onDraftChange: setDraft,
+    onSave: handleSave,
+    hoveredTaskId,
+    selectedTaskId,
+    onHoverIn: (id: string) => setHoveredTaskId(id),
+    onHoverOut: () => setHoveredTaskId(null),
+    onSelect: handleSelect,
+    onMoveBucket: handleMoveBucket,
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -525,32 +543,55 @@ export default function TasksScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.divider} />
+        {/* ── Wide: classic divider → three columns ─────────────────────── */}
+        {isWide && (
+          <>
+            <View style={styles.divider} />
+            <View style={[styles.bucketsContainer, styles.bucketsContainerWide]}>
+              {BUCKETS.map((bucket) => (
+                <BucketSection
+                  key={bucket}
+                  bucket={bucket}
+                  isWide
+                  {...sharedSectionProps}
+                />
+              ))}
+            </View>
+          </>
+        )}
 
-        {/* ── Bucket sections ───────────────────────────────────────────── */}
-        <View style={[styles.bucketsContainer, isWide && styles.bucketsContainerWide]}>
-          {BUCKETS.map((bucket) => (
-            <BucketSection
-              key={bucket}
-              bucket={bucket}
-              todos={todos}
-              expandedId={expandedId}
-              draft={draft}
-              isSaving={editSaving}
-              isWide={isWide}
-              onToggle={handleToggle}
-              onDelete={handleDelete}
-              onDraftChange={setDraft}
-              onSave={handleSave}
-              hoveredTaskId={hoveredTaskId}
-              selectedTaskId={selectedTaskId}
-              onHoverIn={(id) => setHoveredTaskId(id)}
-              onHoverOut={() => setHoveredTaskId(null)}
-              onSelect={handleSelect}
-              onMoveBucket={handleMoveBucket}
-            />
-          ))}
-        </View>
+        {/* ── Narrow: tab bar → single active bucket ────────────────────── */}
+        {!isWide && (
+          <>
+            <View style={styles.tabHeaderRow}>
+              {BUCKETS.map((bucket) => (
+                <TouchableOpacity
+                  key={bucket}
+                  style={[styles.tabButton, activeBucket === bucket && styles.tabButtonActive]}
+                  onPress={() => setActiveBucket(bucket)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.tabLabel, activeBucket === bucket && styles.tabLabelActive]}>
+                    {bucket}
+                  </Text>
+                  <Text style={[styles.tabTotal, activeBucket === bucket && styles.tabTotalActive]}>
+                    {formatMinutes(bucketTotalMinutes(todos, bucket))}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.tabDivider} />
+
+            <View style={styles.bucketsContainer}>
+              <BucketSection
+                bucket={activeBucket}
+                isWide={false}
+                hideHeader
+                {...sharedSectionProps}
+              />
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -618,19 +659,19 @@ const styles = StyleSheet.create({
 
   divider: { height: 1, backgroundColor: C.Border },
 
-  // ── Bucket sections
-  bucketsContainer: { paddingHorizontal: 20, paddingTop: 20 },
+  // ── Wide three-column layout
+  bucketsContainer: { paddingHorizontal: 20, paddingTop: 16 },
   bucketsContainerWide: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   bucketSection: {},
   bucketSectionWide: { flex: 1 },
-  bucketSectionNarrow: { marginBottom: 24 },
+  bucketSectionNarrow: {},
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
-  sectionLabel: { fontSize: 13, color: C.TextPrimary },
+  sectionLabel: { fontSize: 13, fontWeight: '600', color: C.TextPrimary },
   sectionTotal: { fontSize: 13, color: C.TextSecondary },
   emptyText: {
     fontSize: 15,
@@ -639,55 +680,68 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
 
-  // ── Shared card text
-  taskName: { fontSize: 17, fontWeight: '600', color: C.TextPrimary, marginBottom: 4 },
-  taskDuration: { fontSize: 13, color: C.TextSecondary },
-  taskNotes: { fontSize: 13, color: C.TextSecondary, marginTop: 2 },
+  // ── Mobile tab bar
+  tabHeaderRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingBottom: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabButtonActive: { borderBottomColor: C.Accent },
+  tabLabel: { fontSize: 15, fontWeight: '600', color: C.TextSecondary },
+  tabLabelActive: { color: C.Accent },
+  tabTotal: { fontSize: 13, color: C.TextSecondary, marginTop: 2 },
+  tabTotalActive: { color: C.Accent },
+  tabDivider: { height: 1, backgroundColor: C.Border, marginHorizontal: 20 },
 
-  // ── Expanded header (tap to collapse)
-  expandedHeader: {
+  // ── Flat task rows (both layouts)
+  taskRow: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: C.Border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  taskRowFirst: {
+    borderTopWidth: 1,
+    borderTopColor: C.Border,
+  },
+  // Single-line header inside a row (collapsed tap area on web, expanded collapse trigger)
+  taskRowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flex: 1,
     marginBottom: 12,
+    width: '100%',
   },
+  // Tap area: name + duration on one line, flex:1 to push icons right
+  taskRowTapArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  taskName: { flex: 1, fontSize: 17, fontWeight: '600', color: C.TextPrimary },
+  taskDuration: { fontSize: 13, color: C.TextSecondary },
 
   // ── Chevron + delete icons row
   iconsRow: {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    marginLeft: 8,
   },
 
-  // ── Web cards
-  cardWeb: {
-    backgroundColor: C.Surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-  },
-  cardRow: { flexDirection: 'row', alignItems: 'center' },
-  cardText: { flex: 1, marginRight: 8 },
-
-  // ── Native cards
-  cardNative: {
-    backgroundColor: C.Surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-
-  // ── Edit form (inside expanded card)
-  editForm: { gap: 10 },
+  // ── Edit form (expands within the row)
+  editForm: { gap: 10, width: '100%', paddingTop: 4 },
   editInput: {
     backgroundColor: C.Surface,
     borderWidth: 1,
