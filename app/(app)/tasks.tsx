@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
   taskRowHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 16,
     flex: 1,
     paddingTop: 20,
     marginBottom: 12,
