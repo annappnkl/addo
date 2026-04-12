@@ -223,24 +223,24 @@ function TaskCard({
   const showIcons = (isHovered || isSelected) && !isExpanded;
 
   const iconsRow = (
-    <View style={styles.iconsRow}>
+    <View style={[styles.iconsRow, { opacity: showIcons ? 1 : 0 }]}>
       <TouchableOpacity
         onPress={() => onMoveBucket('left')}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <ArrowLeftIcon color={C.TextSecondary} size={20} />
+        <ArrowLeftIcon color={C.TextSecondary} size={16} />
       </TouchableOpacity>
       <TouchableOpacity
         onPress={() => onMoveBucket('right')}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <ArrowRightIcon color={C.TextSecondary} size={20} />
+        <ArrowRightIcon color={C.TextSecondary} size={16} />
       </TouchableOpacity>
       <TouchableOpacity
         onPress={onDelete}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <TrashIcon color={C.Destructive} size={20} />
+        <TrashIcon color={C.Destructive} size={16} />
       </TouchableOpacity>
     </View>
   );
@@ -277,7 +277,7 @@ function TaskCard({
           <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
           <Text style={[styles.taskDuration, showIcons && { opacity: 0 }]}>{formatMinutes(todo.estimated_minutes)}</Text>
         </TouchableOpacity>
-        {showIcons && iconsRow}
+        {iconsRow}
       </HoverableView>
     );
   }
@@ -817,8 +817,8 @@ const styles = StyleSheet.create({
 
   // ── Flat task rows (both layouts)
   taskRow: {
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 20,
+    paddingBottom: 20,
     paddingLeft: 16,
     paddingRight: 16,
     borderBottomWidth: 0.5,
