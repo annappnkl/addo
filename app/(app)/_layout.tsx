@@ -104,6 +104,8 @@ export default function AppLayout() {
           tabBarIcon: ({ color }) => <Feather name="settings" size={22} color={color} />,
         }}
       />
+      <Tabs.Screen name="roulette" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="summary" options={{ href: null, headerShown: false }} />
     </Tabs>
   );
 }
