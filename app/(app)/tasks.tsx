@@ -113,20 +113,25 @@ function EditForm({
         ))}
       </ScrollView>
 
-      <View style={styles.bucketPicker}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.pillsScroll}
+        contentContainerStyle={styles.pillsRow}
+      >
         {BUCKETS.map((b) => (
           <TouchableOpacity
             key={b}
-            style={[styles.bucketPill, draft.bucket === b && styles.bucketPillSelected]}
+            style={[styles.pill, draft.bucket === b && styles.pillSelected]}
             onPress={() => onChange({ ...draft, bucket: b })}
             activeOpacity={0.7}
           >
-            <Text style={[styles.bucketPillText, draft.bucket === b && styles.bucketPillTextSelected]}>
+            <Text style={[styles.pillText, draft.bucket === b && styles.pillTextSelected]}>
               {b}
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
 
       <TextInput
         style={[styles.editInput, styles.editNotesInput, notesFocused && styles.editInputFocused]}
@@ -365,7 +370,7 @@ function BucketSection({
 // ─── TasksScreen ──────────────────────────────────────────────────────────────
 export default function TasksScreen() {
   const { width } = useWindowDimensions();
-  const isWide = width >= WIDE_BREAKPOINT;
+  const isWide = Platform.OS === 'web' && width >= WIDE_BREAKPOINT;
 
   const [todos, setTodos] = useState<Todo[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
@@ -555,20 +560,25 @@ export default function TasksScreen() {
             />
           )}
 
-          <View style={styles.bucketPicker}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.pillsScroll}
+            contentContainerStyle={styles.pillsRow}
+          >
             {BUCKETS.map((b) => (
               <TouchableOpacity
                 key={b}
-                style={[styles.bucketPill, selectedBucket === b && styles.bucketPillSelected]}
+                style={[styles.pill, selectedBucket === b && styles.pillSelected]}
                 onPress={() => setSelectedBucket(b)}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.bucketPillText, selectedBucket === b && styles.bucketPillTextSelected]}>
+                <Text style={[styles.pillText, selectedBucket === b && styles.pillTextSelected]}>
                   {b}
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
 
           <TouchableOpacity
             style={[styles.addButton, !canAdd && styles.addButtonDisabled]}
@@ -683,19 +693,6 @@ const styles = StyleSheet.create({
     color: C.TextPrimary,
     width: 120,
   },
-  bucketPicker: { flexDirection: 'row', gap: 8 },
-  bucketPill: {
-    flex: 1,
-    backgroundColor: C.SurfaceAlt,
-    borderRadius: 999,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  bucketPillSelected: { backgroundColor: C.AccentLight, borderColor: C.Accent },
-  bucketPillText: { fontSize: 15, color: C.TextSecondary },
-  bucketPillTextSelected: { color: C.Accent, fontWeight: '600' },
   addButton: {
     backgroundColor: C.Accent,
     borderRadius: 28,
