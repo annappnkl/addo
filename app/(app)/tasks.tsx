@@ -14,7 +14,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { supabase } from '../../src/db/supabase';
 import { getTodosByUser, insertTodo, deleteTodo, updateTodo } from '../../src/db/dao';
-import { bucketTotalMinutes, formatMinutes, moveBucketCircular } from '../../src/logic/todos';
+import { bucketTotalMinutes, formatMinutes, moveBucketCircular, splitByDuration } from '../../src/logic/todos';
 import type { Bucket, Todo } from '../../src/types';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ const C = {
   Border: '#E5E3DE',
 } as const;
 
-const DURATION_OPTIONS = [5, 15, 30, 45, 60, 90] as const;
+const DURATION_OPTIONS = [5, 10, 15, 20, 30] as const;
 type DurationOption = (typeof DURATION_OPTIONS)[number];
 
 const BUCKETS: Bucket[] = ['Must', 'Want', 'Later'];
@@ -374,6 +374,8 @@ export default function TasksScreen() {
   const [title, setTitle] = useState('');
   const [titleFocused, setTitleFocused] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption | null>(null);
+  const [showCustomDuration, setShowCustomDuration] = useState(false);
+  const [customDurationInput, setCustomDurationInput] = useState('');
   const [selectedBucket, setSelectedBucket] = useState<Bucket>('Must');
   const [adding, setAdding] = useState(false);
 
@@ -389,7 +391,9 @@ export default function TasksScreen() {
   // Mobile tab state
   const [activeBucket, setActiveBucket] = useState<Bucket>('Must');
 
-  const canAdd = title.trim().length > 0 && selectedDuration !== null;
+  const canAdd =
+    title.trim().length > 0 &&
+    (selectedDuration !== null || (showCustomDuration && customDurationInput.trim().length > 0));
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -405,11 +409,18 @@ export default function TasksScreen() {
   }
 
   async function handleAdd() {
-    if (!userId || !canAdd || selectedDuration === null) return;
+    if (!userId || !canAdd) return;
+    const minutes = selectedDuration ?? parseInt(customDurationInput, 10);
+    if (!minutes || minutes <= 0) return;
     setAdding(true);
-    await insertTodo(userId, title.trim(), selectedDuration, selectedBucket);
+    const tasks = splitByDuration(title.trim(), selectedBucket, minutes);
+    for (const t of tasks) {
+      await insertTodo(userId, t.title, t.durationMinutes, t.bucket);
+    }
     setTitle('');
     setSelectedDuration(null);
+    setShowCustomDuration(false);
+    setCustomDurationInput('');
     setSelectedBucket('Must');
     await loadTodos(userId);
     setAdding(false);
@@ -506,7 +517,11 @@ export default function TasksScreen() {
               <TouchableOpacity
                 key={d}
                 style={[styles.pill, selectedDuration === d && styles.pillSelected]}
-                onPress={() => setSelectedDuration(selectedDuration === d ? null : d)}
+                onPress={() => {
+                  setSelectedDuration(selectedDuration === d ? null : d);
+                  setShowCustomDuration(false);
+                  setCustomDurationInput('');
+                }}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.pillText, selectedDuration === d && styles.pillTextSelected]}>
@@ -514,7 +529,31 @@ export default function TasksScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
+            {/* "Time" pill — opens custom numeric input */}
+            <TouchableOpacity
+              style={[styles.pill, showCustomDuration && styles.pillSelected]}
+              onPress={() => {
+                setShowCustomDuration(true);
+                setSelectedDuration(null);
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.pillText, showCustomDuration && styles.pillTextSelected]}>
+                Time
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
+
+          {showCustomDuration && (
+            <TextInput
+              style={styles.customDurationInput}
+              value={customDurationInput}
+              onChangeText={setCustomDurationInput}
+              placeholder="e.g. 45"
+              placeholderTextColor={C.TextDisabled}
+              keyboardType="numeric"
+            />
+          )}
 
           <View style={styles.bucketPicker}>
             {BUCKETS.map((b) => (
@@ -633,6 +672,17 @@ const styles = StyleSheet.create({
   pillSelected: { backgroundColor: C.AccentLight, borderColor: C.Accent },
   pillText: { fontSize: 13, color: C.TextSecondary },
   pillTextSelected: { color: C.Accent, fontWeight: '600' },
+  customDurationInput: {
+    backgroundColor: C.Surface,
+    borderWidth: 1,
+    borderColor: C.Accent,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    fontSize: 15,
+    color: C.TextPrimary,
+    width: 120,
+  },
   bucketPicker: { flexDirection: 'row', gap: 8 },
   bucketPill: {
     flex: 1,

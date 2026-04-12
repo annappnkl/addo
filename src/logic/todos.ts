@@ -14,6 +14,24 @@ export function bucketTotalMinutes(todos: Todo[], bucket: Bucket): number {
     .reduce((sum, t) => sum + t.estimated_minutes, 0);
 }
 
+type DurationChunk = { title: string; bucket: Bucket; durationMinutes: number };
+
+export function splitByDuration(
+  title: string,
+  bucket: Bucket,
+  minutes: number
+): DurationChunk[] {
+  if (minutes <= 30) return [{ title, bucket, durationMinutes: minutes }];
+  const tasks: DurationChunk[] = [];
+  const fullChunks = Math.floor(minutes / 30);
+  for (let i = 0; i < fullChunks; i++) {
+    tasks.push({ title, bucket, durationMinutes: 30 });
+  }
+  const remainder = minutes % 30;
+  if (remainder > 0) tasks.push({ title, bucket, durationMinutes: remainder });
+  return tasks;
+}
+
 export function formatMinutes(minutes: number): string {
   if (minutes < 60) return `${minutes}m`;
   const h = Math.floor(minutes / 60);
