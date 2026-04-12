@@ -2,7 +2,7 @@
 // No local SQLite layer on web (SharedArrayBuffer unavailable in browsers).
 // queueForSync is a no-op: writes are synchronous with the remote DB.
 import { supabase } from './supabase';
-import type { Todo, Bucket, SideQuest } from '../types';
+import type { Todo, Bucket, SideQuest, Session, SessionRoll } from '../types';
 
 export async function getTodosByUser(userId: string): Promise<Todo[]> {
   const { data, error } = await supabase
@@ -109,4 +109,62 @@ export async function updateSideQuest(
 export async function deleteSideQuest(id: string): Promise<void> {
   const { error } = await supabase.from('side_quests').delete().eq('id', id);
   if (error) throw error;
+}
+
+// --- Sessions ---
+
+export async function insertSession(
+  s: Omit<Session, 'id'>
+): Promise<Session> {
+  const { data, error } = await supabase
+    .from('sessions')
+    .insert({
+      user_id: s.user_id,
+      area_id: s.area_id,
+      planned_duration_minutes: s.planned_duration_minutes,
+      actual_duration_minutes: s.actual_duration_minutes,
+      started_at: s.started_at,
+      ended_at: s.ended_at,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Session;
+}
+
+export async function insertSessionRoll(
+  r: Omit<SessionRoll, 'id'>
+): Promise<SessionRoll> {
+  const { data, error } = await supabase
+    .from('session_rolls')
+    .insert({
+      user_id: r.user_id,
+      session_id: r.session_id,
+      todo_id: r.todo_id,
+      side_quest_id: r.side_quest_id,
+      outcome: r.outcome,
+      actual_minutes: r.actual_minutes,
+      rolled_at: r.rolled_at,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as SessionRoll;
+}
+
+export async function getSessionsByUser(
+  userId: string,
+  limit = 20
+): Promise<Session[]> {
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .order('started_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []) as Session[];
 }
