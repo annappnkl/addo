@@ -260,7 +260,7 @@ function TaskCard({
       return (
         <View style={rowStyle}>
           <TouchableOpacity onPress={onTap} style={styles.taskRowHeader} activeOpacity={0.7}>
-            <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
+            <Text style={styles.taskName}>{todo.title}</Text>
             <Feather name="chevron-up" size={16} color={C.TextSecondary} />
           </TouchableOpacity>
           <EditForm
@@ -281,7 +281,7 @@ function TaskCard({
         onMouseLeave={onHoverOut}
       >
         <TouchableOpacity onPress={onTap} style={styles.taskRowTapArea} activeOpacity={0.8}>
-          <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
+          <Text style={styles.taskName}>{todo.title}</Text>
         </TouchableOpacity>
         {rightSlot}
       </HoverableView>
@@ -293,7 +293,7 @@ function TaskCard({
     return (
       <View style={rowStyle}>
         <TouchableOpacity onPress={onTap} style={styles.taskRowHeader} activeOpacity={0.7}>
-          <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
+          <Text style={styles.taskName}>{todo.title}</Text>
           <Feather name="chevron-up" size={16} color={C.TextSecondary} />
         </TouchableOpacity>
         <EditForm
@@ -310,7 +310,7 @@ function TaskCard({
   return (
     <View style={rowStyle}>
       <TouchableOpacity onPress={onSelect} style={styles.taskRowTapArea} activeOpacity={0.8}>
-        <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
+        <Text style={styles.taskName}>{todo.title}</Text>
       </TouchableOpacity>
       {rightSlot}
     </View>
