@@ -471,7 +471,7 @@ export default function TasksScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <Pressable style={{ flex: 1 }} onPress={() => {
+      <Pressable style={[{ flex: 1 }, Platform.OS === 'web' && { cursor: 'default' } as object]} onPress={() => {
         if (expandedId) {
           const id = expandedId;
           const currentDraft = draft;
