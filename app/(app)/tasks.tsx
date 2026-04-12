@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -163,6 +163,16 @@ function TaskCard({
   onMoveBucket: (direction: 'left' | 'right') => void;
 }) {
   const showIcons = (isHovered || isSelected) && !isExpanded;
+  const titleInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    // After autoFocus fires, move cursor to end of existing text.
+    requestAnimationFrame(() => {
+      const len = draft.title.length;
+      titleInputRef.current?.setNativeProps({ selection: { start: len, end: len } });
+    });
+  }, [isExpanded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Right-side slot shared by web and native collapsed renders.
   // Duration text and icons occupy the same space; opacity toggles between them.
@@ -205,6 +215,7 @@ function TaskCard({
         <Pressable style={[rowStyle, { cursor: 'default' } as object]} onPress={() => {}}>
           <View style={styles.taskRowHeader}>
             <TextInput
+              ref={titleInputRef}
               style={styles.taskNameInput}
               value={draft.title}
               onChangeText={(v) => onDraftChange({ ...draft, title: v })}
