@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -10,11 +9,13 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { supabase } from '../../src/db/supabase';
 import { getTodosByUser } from '../../src/db/dao';
 import { formatMinutes } from '../../src/logic/todos';
-import type { Bucket, Todo } from '../../src/types';
+import { setSessionConfig } from '../../src/logic/sessionStore';
+import type { Bucket, SideQuest, Todo } from '../../src/types';
 
 // getSideQuestsByUser is not yet in the DAO — another agent owns that file.
 // We check for it at runtime and degrade gracefully if absent.
@@ -324,6 +325,7 @@ export default function SessionScreen() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sideQuestsAvailable, setSideQuestsAvailable] = useState(false);
+  const [sideQuests, setSideQuests] = useState<SideQuest[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -366,7 +368,8 @@ export default function SessionScreen() {
     const sideQuestsFn = resolveSideQuestsFn();
     if (sideQuestsFn) {
       try {
-        await sideQuestsFn(uid);
+        const loaded = await sideQuestsFn(uid);
+        setSideQuests(loaded as SideQuest[]);
         setSideQuestsAvailable(true);
       } catch {
         setSideQuestsAvailable(false);
@@ -378,11 +381,15 @@ export default function SessionScreen() {
     if (durationMinutes === null) return;
 
     if (shuffleAll) {
-      // Skip picker — fire immediately
-      Alert.alert(
-        '\uD83C\uDFB2 Roulette coming in the next build!',
-        'Your session is ready.'
-      );
+      // Skip picker — start immediately with all todos
+      setSessionConfig({
+        selectedTodos: todos,
+        selectedSideQuests: sideQuests,
+        durationMinutes,
+        breakIntervalMinutes: intervalMinutes,
+        justShuffleEverything: true,
+      });
+      router.push('/(app)/roulette');
       return;
     }
 
@@ -404,10 +411,16 @@ export default function SessionScreen() {
   }
 
   function handleStart() {
-    Alert.alert(
-      '\uD83C\uDFB2 Roulette coming in the next build!',
-      'Your session is ready.'
-    );
+    if (durationMinutes === null) return;
+    const selected = todos.filter((t) => selectedIds.has(t.id));
+    setSessionConfig({
+      selectedTodos: selected,
+      selectedSideQuests: sideQuests,
+      durationMinutes,
+      breakIntervalMinutes: intervalMinutes,
+      justShuffleEverything: false,
+    });
+    router.push('/(app)/roulette');
   }
 
   if (step === 'picker' && durationMinutes !== null) {
