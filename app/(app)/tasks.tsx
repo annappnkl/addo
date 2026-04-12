@@ -95,22 +95,10 @@ function EditForm({
   draft: EditDraft;
   onChange: (d: EditDraft) => void;
 }) {
-  const [titleFocused, setTitleFocused] = useState(false);
   const [notesFocused, setNotesFocused] = useState(false);
 
   return (
     <View style={styles.editForm}>
-      <TextInput
-        style={[styles.editInput, titleFocused && styles.editInputFocused]}
-        value={draft.title}
-        onChangeText={(v) => onChange({ ...draft, title: v })}
-        placeholder="Task title"
-        placeholderTextColor={C.TextDisabled}
-        onFocus={() => setTitleFocused(true)}
-        onBlur={() => setTitleFocused(false)}
-        autoFocus
-      />
-
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -151,11 +139,9 @@ function TaskCard({
   todo,
   isExpanded,
   draft,
-  isSaving,
   onTap,
   onDelete,
   onDraftChange,
-  onSave,
   isHovered,
   isSelected,
   onHoverIn,
@@ -166,11 +152,9 @@ function TaskCard({
   todo: Todo;
   isExpanded: boolean;
   draft: EditDraft;
-  isSaving: boolean;
   onTap: () => void;
   onDelete: () => void;
   onDraftChange: (d: EditDraft) => void;
-  onSave: () => void;
   isHovered: boolean;
   isSelected: boolean;
   onHoverIn: () => void;
@@ -219,10 +203,19 @@ function TaskCard({
     if (isExpanded) {
       return (
         <View style={rowStyle}>
-          <TouchableOpacity onPress={onTap} style={styles.taskRowHeader} activeOpacity={0.7}>
-            <Text style={styles.taskName}>{todo.title}</Text>
-            <Feather name="chevron-up" size={16} color={C.TextSecondary} />
-          </TouchableOpacity>
+          <View style={styles.taskRowHeader}>
+            <TextInput
+              style={styles.taskNameInput}
+              value={draft.title}
+              onChangeText={(v) => onDraftChange({ ...draft, title: v })}
+              placeholder="Task title"
+              placeholderTextColor={C.TextDisabled}
+              autoFocus
+            />
+            <TouchableOpacity onPress={onTap} activeOpacity={0.7}>
+              <Feather name="chevron-up" size={16} color={C.TextSecondary} />
+            </TouchableOpacity>
+          </View>
           <EditForm
             draft={draft}
             onChange={onDraftChange}
@@ -249,10 +242,19 @@ function TaskCard({
   if (isExpanded) {
     return (
       <View style={rowStyle}>
-        <TouchableOpacity onPress={onTap} style={styles.taskRowHeader} activeOpacity={0.7}>
-          <Text style={styles.taskName}>{todo.title}</Text>
-          <Feather name="chevron-up" size={16} color={C.TextSecondary} />
-        </TouchableOpacity>
+        <View style={styles.taskRowHeader}>
+          <TextInput
+            style={styles.taskNameInput}
+            value={draft.title}
+            onChangeText={(v) => onDraftChange({ ...draft, title: v })}
+            placeholder="Task title"
+            placeholderTextColor={C.TextDisabled}
+            autoFocus
+          />
+          <TouchableOpacity onPress={onTap} activeOpacity={0.7}>
+            <Feather name="chevron-up" size={16} color={C.TextSecondary} />
+          </TouchableOpacity>
+        </View>
         <EditForm
           draft={draft}
           onChange={onDraftChange}
@@ -277,13 +279,11 @@ function BucketSection({
   todos,
   expandedId,
   draft,
-  isSaving,
   isWide,
   hideHeader,
   onToggle,
   onDelete,
   onDraftChange,
-  onSave,
   hoveredTaskId,
   selectedTaskId,
   onHoverIn,
@@ -295,13 +295,11 @@ function BucketSection({
   todos: Todo[];
   expandedId: string | null;
   draft: EditDraft;
-  isSaving: boolean;
   isWide: boolean;
   hideHeader?: boolean;
   onToggle: (todo: Todo) => void;
   onDelete: (id: string) => void;
   onDraftChange: (d: EditDraft) => void;
-  onSave: () => void;
   hoveredTaskId: string | null;
   selectedTaskId: string | null;
   onHoverIn: (id: string) => void;
@@ -329,11 +327,9 @@ function BucketSection({
             todo={todo}
             isExpanded={expandedId === todo.id}
             draft={draft}
-            isSaving={isSaving}
             onTap={() => onToggle(todo)}
             onDelete={() => onDelete(todo.id)}
             onDraftChange={onDraftChange}
-            onSave={onSave}
             isHovered={hoveredTaskId === todo.id}
             isSelected={selectedTaskId === todo.id}
             onHoverIn={() => onHoverIn(todo.id)}
@@ -366,8 +362,6 @@ export default function TasksScreen() {
   // Inline edit
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditDraft>({ title: '', duration: null, bucket: 'Must', notes: '' });
-  const [editSaving, setEditSaving] = useState(false);
-
   // Hover/selection state for chevron + delete icons
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -430,27 +424,33 @@ export default function TasksScreen() {
 
   function handleToggle(todo: Todo) {
     if (expandedId === todo.id) {
-      void handleSave();
+      const id = expandedId;
+      const currentDraft = draft;
+      setExpandedId(null);
+      void saveDraft(id, currentDraft);
     } else {
-      if (expandedId) void handleSave();
+      if (expandedId) {
+        const prevId = expandedId;
+        const prevDraft = draft;
+        void saveDraft(prevId, prevDraft);
+      }
       setExpandedId(todo.id);
       setSelectedTaskId(null);
       setDraft(draftFromTodo(todo));
     }
   }
 
-  async function handleSave() {
-    if (!expandedId || !draft.title.trim() || draft.duration === null) return;
-    setEditSaving(true);
-    await updateTodo(expandedId, {
-      title: draft.title.trim(),
-      estimated_minutes: draft.duration,
-      bucket: draft.bucket,
-      notes: draft.notes.trim() || null,
-    });
-    setExpandedId(null);
+  async function saveDraft(id: string, draftToSave: EditDraft) {
+    if (!id || !draftToSave.title.trim()) return;
+    const fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'notes'>> = {
+      title: draftToSave.title.trim(),
+      notes: draftToSave.notes.trim() || null,
+    };
+    if (draftToSave.duration !== null) {
+      fields.estimated_minutes = draftToSave.duration;
+    }
+    await updateTodo(id, fields);
     if (userId) await loadTodos(userId);
-    setEditSaving(false);
   }
 
   // Shared BucketSection props
@@ -458,11 +458,9 @@ export default function TasksScreen() {
     todos,
     expandedId,
     draft,
-    isSaving: editSaving,
     onToggle: handleToggle,
     onDelete: handleDelete,
     onDraftChange: setDraft,
-    onSave: handleSave,
     hoveredTaskId,
     selectedTaskId,
     onHoverIn: (id: string) => setHoveredTaskId(id),
@@ -473,7 +471,14 @@ export default function TasksScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <Pressable style={{ flex: 1 }} onPress={() => { if (expandedId) void handleSave(); }}>
+      <Pressable style={{ flex: 1 }} onPress={() => {
+        if (expandedId) {
+          const id = expandedId;
+          const currentDraft = draft;
+          setExpandedId(null);
+          void saveDraft(id, currentDraft);
+        }
+      }}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -809,6 +814,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   taskName: { flex: 1, fontSize: 16, fontWeight: '400', color: '#000000' },
+  taskNameInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#000000',
+    backgroundColor: 'transparent',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    // @ts-ignore — web-only: suppress browser default focus outline
+    outlineWidth: 0,
+  },
   taskDuration: { fontSize: 12, fontWeight: '300', color: '#8C8C8C' },
 
   // Right slot: duration text and icons occupy the same space, opacity-toggled
