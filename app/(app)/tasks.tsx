@@ -251,7 +251,7 @@ function TaskCard({
       >
         <TouchableOpacity onPress={onTap} style={styles.taskRowTapArea} activeOpacity={0.8}>
           <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
-          <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
+          <Text style={[styles.taskDuration, showIcons && { opacity: 0 }]}>{formatMinutes(todo.estimated_minutes)}</Text>
         </TouchableOpacity>
         {showIcons && iconsRow}
       </HoverableView>
@@ -281,7 +281,7 @@ function TaskCard({
     <View style={rowStyle}>
       <TouchableOpacity onPress={onSelect} style={styles.taskRowTapArea} activeOpacity={0.8}>
         <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
-        <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
+        <Text style={[styles.taskDuration, showIcons && { opacity: 0 }]}>{formatMinutes(todo.estimated_minutes)}</Text>
       </TouchableOpacity>
       {showIcons && iconsRow}
     </View>
@@ -500,7 +500,11 @@ export default function TasksScreen() {
           {/* Pill-shaped input + submit button */}
           <View style={styles.inputBar}>
             <TextInput
-              style={styles.inputBarText}
+              style={[
+                styles.inputBarText,
+                // @ts-ignore — web-only: suppress browser focus outline
+                Platform.OS === 'web' && { outlineWidth: 0 },
+              ]}
               placeholder="What is there to do?"
               placeholderTextColor="#64758B"
               value={title}
@@ -508,7 +512,7 @@ export default function TasksScreen() {
               returnKeyType="done"
             />
             <TouchableOpacity
-              style={[styles.submitCircle, { opacity: canAdd ? 1 : 0.4 }]}
+              style={[styles.submitCircle, { opacity: canAdd ? 1 : 0.35 }]}
               onPress={handleAdd}
               disabled={!canAdd || adding}
               activeOpacity={0.85}
@@ -555,31 +559,30 @@ export default function TasksScreen() {
                   </Text>
                 </TouchableOpacity>
               ))}
-              <TouchableOpacity
-                style={[styles.typeATimeChip, showCustomDuration && styles.typeATimeChipSelected]}
-                onPress={() => {
-                  setShowCustomDuration(true);
-                  setSelectedDuration(null);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.typeATimeChipText, showCustomDuration && styles.typeATimeChipTextSelected]}>
-                  Type a time
-                </Text>
-              </TouchableOpacity>
+              {showCustomDuration ? (
+                <TextInput
+                  style={styles.timeInlineInput}
+                  value={customDurationInput}
+                  onChangeText={setCustomDurationInput}
+                  placeholder="e.g. 45"
+                  placeholderTextColor="#64758B"
+                  keyboardType="numeric"
+                  autoFocus
+                />
+              ) : (
+                <TouchableOpacity
+                  style={styles.typeATimeChip}
+                  onPress={() => {
+                    setShowCustomDuration(true);
+                    setSelectedDuration(null);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.typeATimeChipText}>Type a time</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
-
-          {showCustomDuration && (
-            <TextInput
-              style={styles.customDurationInput}
-              value={customDurationInput}
-              onChangeText={setCustomDurationInput}
-              placeholder="e.g. 45"
-              placeholderTextColor={C.TextDisabled}
-              keyboardType="numeric"
-            />
-          )}
         </View>
 
         {/* ── Wide: classic divider → three columns ─────────────────────── */}
@@ -643,11 +646,13 @@ const styles = StyleSheet.create({
 
   // ── Add task area
   addArea: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
-    marginBottom: 66,
-    gap: 12,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 760,
+    paddingHorizontal: 40,
+    paddingTop: 32,
+    marginBottom: 24,
+    gap: 16,
   },
   inputBar: {
     flexDirection: 'row',
@@ -719,9 +724,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  typeATimeChipSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
   typeATimeChipText: { color: '#64758B', fontSize: 14, fontWeight: '500' },
-  typeATimeChipTextSelected: { color: '#F97316' },
+  timeInlineInput: {
+    height: 38,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: '#F97316',
+    backgroundColor: '#FFF0E5',
+    paddingHorizontal: 16,
+    fontSize: 14,
+    color: '#0F172A',
+    minWidth: 100,
+  },
   pillsScroll: { flexGrow: 0 },
   pillsRow: { flexDirection: 'row', gap: 8 },
   pill: {
@@ -735,17 +749,6 @@ const styles = StyleSheet.create({
   pillSelected: { backgroundColor: C.AccentLight, borderColor: C.Accent },
   pillText: { fontSize: 13, color: C.TextSecondary },
   pillTextSelected: { color: C.Accent, fontWeight: '600' },
-  customDurationInput: {
-    backgroundColor: C.Surface,
-    borderWidth: 1,
-    borderColor: C.Accent,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 44,
-    fontSize: 15,
-    color: C.TextPrimary,
-    width: 120,
-  },
   divider: { height: 1, backgroundColor: C.Border },
 
   // ── Wide three-column layout
@@ -802,11 +805,6 @@ const styles = StyleSheet.create({
     paddingRight: 42,
     borderBottomWidth: 0.5,
     borderBottomColor: '#E6E6E6',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4.6,
-    elevation: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'transparent',
