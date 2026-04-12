@@ -1,5 +1,13 @@
 import type { Todo, Bucket } from '../types';
 
+const BUCKET_ORDER: Bucket[] = ['Must', 'Want', 'Later'];
+
+export function moveBucketCircular(current: Bucket, direction: 'left' | 'right'): Bucket {
+  const idx = BUCKET_ORDER.indexOf(current);
+  if (direction === 'left') return BUCKET_ORDER[(idx - 1 + 3) % 3];
+  return BUCKET_ORDER[(idx + 1) % 3];
+}
+
 export function bucketTotalMinutes(todos: Todo[], bucket: Bucket): number {
   return todos
     .filter((t) => t.bucket === bucket)

@@ -1,10 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  ActionSheetIOS,
-  Alert,
-  Animated,
-  PanResponder,
-  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -19,9 +14,8 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { supabase } from '../../src/db/supabase';
 import { getTodosByUser, insertTodo, deleteTodo, updateTodo } from '../../src/db/dao';
-import { bucketTotalMinutes, formatMinutes } from '../../src/logic/todos';
+import { bucketTotalMinutes, formatMinutes, moveBucketCircular } from '../../src/logic/todos';
 import type { Bucket, Todo } from '../../src/types';
-import { DragProvider, DraggableTodo, DroppableBucket } from '../../src/components/dragDrop';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -42,7 +36,6 @@ type DurationOption = (typeof DURATION_OPTIONS)[number];
 
 const BUCKETS: Bucket[] = ['Must', 'Want', 'Later'];
 const WIDE_BREAKPOINT = 768;
-const SWIPE_WIDTH = 72;
 
 // React Native Web supports onMouseEnter/onMouseLeave on View but they are not
 // typed in base @types/react-native. This typed wrapper avoids `any`.
@@ -176,7 +169,12 @@ function TaskCard({
   onDelete,
   onDraftChange,
   onSave,
-  onLongPress,
+  isHovered,
+  isSelected,
+  onHoverIn,
+  onHoverOut,
+  onSelect,
+  onMoveBucket,
 }: {
   todo: Todo;
   isExpanded: boolean;
@@ -186,40 +184,43 @@ function TaskCard({
   onDelete: () => void;
   onDraftChange: (d: EditDraft) => void;
   onSave: () => void;
-  onLongPress?: () => void;
+  isHovered: boolean;
+  isSelected: boolean;
+  onHoverIn: () => void;
+  onHoverOut: () => void;
+  onSelect: () => void;
+  onMoveBucket: (direction: 'left' | 'right') => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-  const translateX = useRef(new Animated.Value(0)).current;
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-      onPanResponderMove: (_, g) => {
-        if (g.dx < 0) translateX.setValue(Math.max(g.dx, -SWIPE_WIDTH));
-      },
-      onPanResponderRelease: (_, g) => {
-        if (g.dx < -(SWIPE_WIDTH / 2)) {
-          Animated.spring(translateX, { toValue: -SWIPE_WIDTH, useNativeDriver: true }).start();
-        } else {
-          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
-        }
-      },
-    })
-  ).current;
-
-  // Snap back when expanding so swipe state doesn't persist
-  useEffect(() => {
-    if (isExpanded) {
-      Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
-    }
-  }, [isExpanded, translateX]);
+  const showIcons = isHovered || isSelected;
 
   const expandedHeader = (
     <TouchableOpacity onPress={onTap} style={styles.expandedHeader} activeOpacity={0.7}>
       <Text style={styles.taskName} numberOfLines={1}>{todo.title}</Text>
       <Feather name="chevron-up" size={16} color={C.TextSecondary} />
     </TouchableOpacity>
+  );
+
+  const iconsRow = (
+    <View style={styles.iconsRow}>
+      <TouchableOpacity
+        onPress={() => onMoveBucket('left')}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Feather name="chevron-left" size={20} color={C.TextSecondary} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => onMoveBucket('right')}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Feather name="chevron-right" size={20} color={C.TextSecondary} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={onDelete}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Feather name="trash-2" size={20} color={C.Destructive} />
+      </TouchableOpacity>
+    </View>
   );
 
   // ── Web ──────────────────────────────────────────────────────────────────────
@@ -242,11 +243,10 @@ function TaskCard({
     return (
       <HoverableView
         style={styles.cardWeb}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={onHoverIn}
+        onMouseLeave={onHoverOut}
       >
         <View style={styles.cardRow}>
-          {/* Card content — tapping opens edit */}
           <TouchableOpacity onPress={onTap} style={styles.cardText} activeOpacity={0.8}>
             <Text style={styles.taskName}>{todo.title}</Text>
             <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
@@ -254,20 +254,7 @@ function TaskCard({
               <Text style={styles.taskNotes} numberOfLines={1}>{todo.notes}</Text>
             ) : null}
           </TouchableOpacity>
-
-          {/* Trash icon — always in DOM, revealed via opacity on hover.
-              pointerEvents:'none' when invisible so it can't intercept card taps. */}
-          <View
-            style={[styles.trashWrap, { opacity: hovered ? 1 : 0 }]}
-            pointerEvents={hovered ? 'auto' : 'none'}
-          >
-            <TouchableOpacity
-              onPress={onDelete}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="trash-2" size={20} color={C.Destructive} />
-            </TouchableOpacity>
-          </View>
+          {showIcons && iconsRow}
         </View>
       </HoverableView>
     );
@@ -276,7 +263,7 @@ function TaskCard({
   // ── Native ───────────────────────────────────────────────────────────────────
   if (isExpanded) {
     return (
-      <View style={[styles.cardNative, styles.cardNativeStandalone]}>
+      <View style={styles.cardNative}>
         {expandedHeader}
         <EditForm
           draft={draft}
@@ -290,29 +277,17 @@ function TaskCard({
   }
 
   return (
-    <View style={styles.cardWrapperNative}>
-      <View style={styles.deleteReveal}>
-        <Pressable onPress={onDelete} style={styles.deleteRevealBtn}>
-          <Feather name="trash-2" size={20} color="#fff" />
-        </Pressable>
-      </View>
-      <Animated.View
-        style={[styles.cardNative, { transform: [{ translateX }] }]}
-        {...panResponder.panHandlers}
-      >
-        <TouchableOpacity
-          onPress={onTap}
-          onLongPress={onLongPress}
-          delayLongPress={500}
-          activeOpacity={0.8}
-        >
+    <View style={styles.cardNative}>
+      <View style={styles.cardRow}>
+        <TouchableOpacity onPress={onSelect} style={styles.cardText} activeOpacity={0.8}>
           <Text style={styles.taskName}>{todo.title}</Text>
           <Text style={styles.taskDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
           {todo.notes ? (
             <Text style={styles.taskNotes} numberOfLines={1}>{todo.notes}</Text>
           ) : null}
         </TouchableOpacity>
-      </Animated.View>
+        {showIcons && iconsRow}
+      </View>
     </View>
   );
 }
@@ -329,7 +304,12 @@ function BucketSection({
   onDelete,
   onDraftChange,
   onSave,
-  onLongPress,
+  hoveredTaskId,
+  selectedTaskId,
+  onHoverIn,
+  onHoverOut,
+  onSelect,
+  onMoveBucket,
 }: {
   bucket: Bucket;
   todos: Todo[];
@@ -341,44 +321,45 @@ function BucketSection({
   onDelete: (id: string) => void;
   onDraftChange: (d: EditDraft) => void;
   onSave: () => void;
-  onLongPress: (todo: Todo) => void;
+  hoveredTaskId: string | null;
+  selectedTaskId: string | null;
+  onHoverIn: (id: string) => void;
+  onHoverOut: () => void;
+  onSelect: (id: string) => void;
+  onMoveBucket: (id: string, direction: 'left' | 'right') => void;
 }) {
   const bucketTodos = todos.filter((t) => t.bucket === bucket);
 
   return (
     <View style={[styles.bucketSection, isWide ? styles.bucketSectionWide : styles.bucketSectionNarrow]}>
-      <DroppableBucket bucket={bucket}>
-        {(isDragOver) => (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionLabel, isDragOver && styles.sectionLabelDragOver]}>
-                {bucket}
-              </Text>
-              <Text style={styles.sectionTotal}>{formatMinutes(bucketTotalMinutes(todos, bucket))}</Text>
-            </View>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionLabel}>{bucket}</Text>
+        <Text style={styles.sectionTotal}>{formatMinutes(bucketTotalMinutes(todos, bucket))}</Text>
+      </View>
 
-            {bucketTodos.length === 0 ? (
-              <Text style={styles.emptyText}>Nothing here yet.</Text>
-            ) : (
-              bucketTodos.map((todo) => (
-                <DraggableTodo key={todo.id} id={todo.id} bucket={todo.bucket}>
-                  <TaskCard
-                    todo={todo}
-                    isExpanded={expandedId === todo.id}
-                    draft={draft}
-                    isSaving={isSaving}
-                    onTap={() => onToggle(todo)}
-                    onDelete={() => onDelete(todo.id)}
-                    onDraftChange={onDraftChange}
-                    onSave={onSave}
-                    onLongPress={() => onLongPress(todo)}
-                  />
-                </DraggableTodo>
-              ))
-            )}
-          </>
-        )}
-      </DroppableBucket>
+      {bucketTodos.length === 0 ? (
+        <Text style={styles.emptyText}>Nothing here yet.</Text>
+      ) : (
+        bucketTodos.map((todo) => (
+          <TaskCard
+            key={todo.id}
+            todo={todo}
+            isExpanded={expandedId === todo.id}
+            draft={draft}
+            isSaving={isSaving}
+            onTap={() => onToggle(todo)}
+            onDelete={() => onDelete(todo.id)}
+            onDraftChange={onDraftChange}
+            onSave={onSave}
+            isHovered={hoveredTaskId === todo.id}
+            isSelected={selectedTaskId === todo.id}
+            onHoverIn={() => onHoverIn(todo.id)}
+            onHoverOut={onHoverOut}
+            onSelect={() => onSelect(todo.id)}
+            onMoveBucket={(dir) => onMoveBucket(todo.id, dir)}
+          />
+        ))
+      )}
     </View>
   );
 }
@@ -402,6 +383,10 @@ export default function TasksScreen() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditDraft>({ title: '', duration: null, bucket: 'Must', notes: '' });
   const [editSaving, setEditSaving] = useState(false);
+
+  // Hover/selection state for chevron + delete icons
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const canAdd = title.trim().length > 0 && selectedDuration !== null;
 
@@ -430,49 +415,32 @@ export default function TasksScreen() {
   }
 
   async function handleDelete(id: string) {
-    // Close edit if this todo was expanded
     if (expandedId === id) setExpandedId(null);
+    if (selectedTaskId === id) setSelectedTaskId(null);
     await deleteTodo(id);
     if (userId) await loadTodos(userId);
   }
 
-  async function handleMove(todoId: string, newBucket: Bucket) {
-    await updateTodo(todoId, { bucket: newBucket });
+  async function handleMoveBucket(id: string, direction: 'left' | 'right') {
+    const todo = todos.find((t) => t.id === id);
+    if (!todo) return;
+    const newBucket = moveBucketCircular(todo.bucket, direction);
+    await updateTodo(id, { bucket: newBucket });
+    // Task moved to a different section — clear selection so icons don't appear in the old column
+    setSelectedTaskId(null);
     if (userId) await loadTodos(userId);
   }
 
-  function handleLongPress(todo: Todo) {
-    // No-op on expanded cards — user is in edit mode
-    if (expandedId === todo.id) return;
-    const otherBuckets = BUCKETS.filter((b) => b !== todo.bucket);
-    const options = [...otherBuckets.map((b) => `Move to ${b}`), 'Cancel'];
-    const cancelIndex = options.length - 1;
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options, cancelButtonIndex: cancelIndex },
-        (buttonIndex) => {
-          if (buttonIndex === cancelIndex) return;
-          void handleMove(todo.id, otherBuckets[buttonIndex]);
-        }
-      );
-    } else {
-      Alert.alert('Move task', undefined, [
-        ...otherBuckets.map((b) => ({
-          text: `Move to ${b}`,
-          onPress: () => void handleMove(todo.id, b),
-        })),
-        { text: 'Cancel', style: 'cancel' as const },
-      ]);
-    }
+  function handleSelect(id: string) {
+    setSelectedTaskId((prev) => (prev === id ? null : id));
   }
 
   function handleToggle(todo: Todo) {
     if (expandedId === todo.id) {
-      // Already expanded — collapse
       setExpandedId(null);
     } else {
-      // Expand and populate draft from current todo values
       setExpandedId(todo.id);
+      setSelectedTaskId(null); // clear selection when entering edit mode
       setDraft(draftFromTodo(todo));
     }
   }
@@ -560,26 +528,29 @@ export default function TasksScreen() {
         <View style={styles.divider} />
 
         {/* ── Bucket sections ───────────────────────────────────────────── */}
-        <DragProvider onMove={handleMove}>
-          <View style={[styles.bucketsContainer, isWide && styles.bucketsContainerWide]}>
-            {BUCKETS.map((bucket) => (
-              <BucketSection
-                key={bucket}
-                bucket={bucket}
-                todos={todos}
-                expandedId={expandedId}
-                draft={draft}
-                isSaving={editSaving}
-                isWide={isWide}
-                onToggle={handleToggle}
-                onDelete={handleDelete}
-                onDraftChange={setDraft}
-                onSave={handleSave}
-                onLongPress={handleLongPress}
-              />
-            ))}
-          </View>
-        </DragProvider>
+        <View style={[styles.bucketsContainer, isWide && styles.bucketsContainerWide]}>
+          {BUCKETS.map((bucket) => (
+            <BucketSection
+              key={bucket}
+              bucket={bucket}
+              todos={todos}
+              expandedId={expandedId}
+              draft={draft}
+              isSaving={editSaving}
+              isWide={isWide}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+              onDraftChange={setDraft}
+              onSave={handleSave}
+              hoveredTaskId={hoveredTaskId}
+              selectedTaskId={selectedTaskId}
+              onHoverIn={(id) => setHoveredTaskId(id)}
+              onHoverOut={() => setHoveredTaskId(null)}
+              onSelect={handleSelect}
+              onMoveBucket={handleMoveBucket}
+            />
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -660,7 +631,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionLabel: { fontSize: 13, color: C.TextPrimary },
-  sectionLabelDragOver: { color: C.Accent },
   sectionTotal: { fontSize: 13, color: C.TextSecondary },
   emptyText: {
     fontSize: 15,
@@ -682,6 +652,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
+  // ── Chevron + delete icons row
+  iconsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+
   // ── Web cards
   cardWeb: {
     backgroundColor: C.Surface,
@@ -695,39 +672,12 @@ const styles = StyleSheet.create({
   },
   cardRow: { flexDirection: 'row', alignItems: 'center' },
   cardText: { flex: 1, marginRight: 8 },
-  trashWrap: { padding: 4 },
 
   // ── Native cards
-  cardWrapperNative: {
-    position: 'relative',
-    marginBottom: 12,
+  cardNative: {
+    backgroundColor: C.Surface,
     borderRadius: 16,
-    backgroundColor: C.Destructive,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  deleteReveal: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: SWIPE_WIDTH,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  deleteRevealBtn: {
-    flex: 1,
-    width: SWIPE_WIDTH,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardNative: { backgroundColor: C.Surface, borderRadius: 16, padding: 16 },
-  // Standalone = expanded native card (not inside swipe wrapper, needs its own shadow + margin)
-  cardNativeStandalone: {
+    padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
