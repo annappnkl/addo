@@ -17,7 +17,7 @@ import type { Todo, SideQuest } from '../../src/types';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  Bg: '#F7F6F3',
+  Bg: '#FFFFFF',
   Surface: '#FFFFFF',
   SurfaceAlt: '#F0EEE9',
   TextPrimary: '#1A1A1A',
@@ -98,7 +98,7 @@ export default function SummaryScreen() {
             {completedTodoRolls.map((r, i) => {
               const todo = r.item as Todo;
               return (
-                <View key={`done-${todo.id}-${i}`} style={styles.card}>
+                <View key={`done-${todo.id}-${i}`} style={styles.rollItem}>
                   <View style={styles.rollRow}>
                     <Text style={styles.rollName}>{todo.title}</Text>
                     <Text style={styles.rollMeta}>
@@ -118,7 +118,7 @@ export default function SummaryScreen() {
             {completedSqRolls.map((r, i) => {
               const sq = r.item as SideQuest;
               return (
-                <View key={`sq-${sq.id}-${i}`} style={styles.card}>
+                <View key={`sq-${sq.id}-${i}`} style={styles.rollItem}>
                   <View style={styles.rollRow}>
                     <Text style={styles.rollName}>{sq.title}</Text>
                     <Text style={styles.rollMeta}>
@@ -136,7 +136,7 @@ export default function SummaryScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>SKIPPED — BACK TO POOL</Text>
             {result.skippedTodos.map((todo) => (
-              <View key={`skipped-${todo.id}`} style={styles.card}>
+              <View key={`skipped-${todo.id}`} style={styles.rollItem}>
                 <Text style={styles.skippedName}>{todo.title}</Text>
               </View>
             ))}
@@ -191,16 +191,21 @@ const styles = StyleSheet.create({
   accentText: { color: C.Accent },
   destructiveText: { color: C.Destructive },
 
-  // ── Card
+  // ── Card (header only)
   card: {
     backgroundColor: C.Surface,
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E6E6E6',
     gap: 8,
+  },
+
+  // ── Flat roll item row
+  rollItem: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E6E6E6',
+    paddingVertical: 12,
   },
 
   // ── Duration rows
@@ -213,10 +218,9 @@ const styles = StyleSheet.create({
   // ── Section
   section: { gap: 8 },
   sectionLabel: {
-    fontSize: 13,
-    color: C.TextSecondary,
-    fontWeight: '400',
-    letterSpacing: 0.5,
+    fontSize: 14,
+    color: '#8C8C8C',
+    fontWeight: '500',
   },
 
   // ── Roll row
@@ -225,11 +229,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  rollName: { fontSize: 17, fontWeight: '600', color: C.TextPrimary, flex: 1 },
+  rollName: { fontSize: 17, fontWeight: '400', color: '#000000', flex: 1 },
   rollMeta: { fontSize: 13, color: C.TextSecondary, flexShrink: 0 },
 
   // ── Skipped
-  skippedName: { fontSize: 17, fontWeight: '600', color: C.TextSecondary },
+  skippedName: { fontSize: 17, fontWeight: '400', color: '#8C8C8C' },
 
   // ── Escape caption
   escapeCaption: { fontSize: 13, color: C.TextSecondary },
