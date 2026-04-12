@@ -86,4 +86,5 @@ addo/
 
 ## File Anna should never lose
 - [BUILD_ROADMAP.md](BUILD_ROADMAP.md) — the product contract
+- [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) — colours, typography, spacing, component specs. Read before building any screen.
 - This file (CLAUDE.md) — the project rules
