@@ -537,7 +537,7 @@ export default function TasksScreen() {
               disabled={!canAdd || adding}
               activeOpacity={0.85}
             >
-              <Feather name="chevron-up" size={16} color="#FFFFFF" />
+              <Feather name="chevron-down" size={16} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
 
