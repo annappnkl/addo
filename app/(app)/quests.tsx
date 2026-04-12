@@ -26,7 +26,7 @@ import type { SideQuest } from '../../src/types';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  Bg: '#F7F6F3',
+  Bg: '#FFFFFF',
   Surface: '#FFFFFF',
   SurfaceAlt: '#F0EEE9',
   TextPrimary: '#1A1A1A',
@@ -557,14 +557,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   titleInput: {
-    backgroundColor: C.Surface,
+    backgroundColor: '#F3F3F3',
     borderWidth: 1,
-    borderColor: C.Border,
-    borderRadius: 12,
+    borderColor: '#CBD5E1',
+    borderRadius: 9999,
     paddingHorizontal: 16,
     height: 48,
     fontSize: 15,
     color: C.TextPrimary,
+    // @ts-ignore — web-only: suppress browser default focus outline
+    outlineWidth: 0,
   },
   titleInputFocused: { borderColor: C.Accent },
 
@@ -572,16 +574,16 @@ const styles = StyleSheet.create({
   pillsScroll: { flexGrow: 0 },
   pillsRow: { flexDirection: 'row', gap: 8 },
   pill: {
-    backgroundColor: C.SurfaceAlt,
+    backgroundColor: '#FFFFFF',
     borderRadius: 999,
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#E2E8F0',
   },
-  pillSelected: { backgroundColor: C.AccentLight, borderColor: C.Accent },
-  pillText: { fontSize: 13, color: C.TextSecondary },
-  pillTextSelected: { color: C.Accent, fontWeight: '600' },
+  pillSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
+  pillText: { fontSize: 14, color: '#0F172A', fontWeight: '500' },
+  pillTextSelected: { color: '#F97316', fontWeight: '500' },
 
   // ── Link input
   linkInputWrap: {
@@ -600,6 +602,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: C.TextPrimary,
+    // @ts-ignore — web-only: suppress browser default focus outline
+    outlineWidth: 0,
   },
 
   // ── Add button
@@ -614,7 +618,7 @@ const styles = StyleSheet.create({
   addButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
   addButtonTextDisabled: { color: C.TextDisabled },
 
-  divider: { height: 1, backgroundColor: C.Border },
+  divider: { height: 1, backgroundColor: '#E6E6E6' },
 
   // ── List area
   listArea: {
@@ -633,8 +637,8 @@ const styles = StyleSheet.create({
   cardRow: { flexDirection: 'row', alignItems: 'center' },
   cardText: { flex: 1, marginRight: 8 },
   cardRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sqName: { fontSize: 17, fontWeight: '600', color: C.TextPrimary, marginBottom: 4 },
-  sqDuration: { fontSize: 13, color: C.TextSecondary },
+  sqName: { fontSize: 20, fontWeight: '400', color: '#000000', marginBottom: 4 },
+  sqDuration: { fontSize: 12, fontWeight: '300', color: '#8C8C8C' },
   linkIconBtn: { padding: 4 },
   trashWrap: { padding: 4 },
 
@@ -648,14 +652,10 @@ const styles = StyleSheet.create({
 
   // ── Web cards
   cardWeb: {
-    backgroundColor: C.Surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E6E6E6',
+    paddingVertical: 16,
+    backgroundColor: 'transparent',
   },
 
   // ── Native cards
@@ -665,11 +665,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: C.Destructive,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
   },
   deleteReveal: {
     position: 'absolute',
@@ -686,15 +681,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cardNative: { backgroundColor: C.Surface, borderRadius: 16, padding: 16 },
-  cardNativeStandalone: {
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+  cardNative: {
+    backgroundColor: C.Surface,
+    borderRadius: 16,
+    padding: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E6E6E6',
   },
+  cardNativeStandalone: { marginBottom: 12 },
 
   // ── Edit form
   editForm: { gap: 10 },
