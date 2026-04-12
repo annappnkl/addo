@@ -22,7 +22,7 @@ import type { Todo, SideQuest } from '../../src/types';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  Bg: '#F7F6F3',
+  Bg: '#FFFFFF',
   Surface: '#FFFFFF',
   SurfaceAlt: '#F0EEE9',
   TextPrimary: '#1A1A1A',
@@ -647,10 +647,8 @@ const styles = StyleSheet.create({
     backgroundColor: C.Surface,
     borderRadius: 16,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E6E6E6',
     gap: 12,
   },
   cardSideQuest: { backgroundColor: '#FFF0E6' },
@@ -660,7 +658,7 @@ const styles = StyleSheet.create({
   pill: {
     alignSelf: 'flex-start',
     backgroundColor: C.AccentLight,
-    borderRadius: 8,
+    borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 8,
   },
@@ -731,6 +729,8 @@ const styles = StyleSheet.create({
     backgroundColor: C.Surface,
     borderRadius: 16,
     padding: 24,
+    borderWidth: 1,
+    borderColor: '#E6E6E6',
     gap: 16,
   },
   softEndTitle: {
