@@ -30,7 +30,7 @@ function resolveSideQuestsFn(): GetSideQuestsFn | undefined {
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
-  Bg: '#F7F6F3',
+  Bg: '#FFFFFF',
   Surface: '#FFFFFF',
   SurfaceAlt: '#F0EEE9',
   TextPrimary: '#1A1A1A',
@@ -466,10 +466,8 @@ const styles = StyleSheet.create({
     backgroundColor: C.Surface,
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E6E6E6',
     opacity: 0.6,
   },
   comingSoonText: {
@@ -486,16 +484,16 @@ const styles = StyleSheet.create({
   },
   pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: {
-    backgroundColor: C.SurfaceAlt,
+    backgroundColor: '#FFFFFF',
     borderRadius: 999,
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#E2E8F0',
   },
-  pillSelected: { backgroundColor: C.AccentLight, borderColor: C.Accent },
-  pillText: { fontSize: 13, color: C.TextSecondary },
-  pillTextSelected: { fontSize: 13, color: C.Accent, fontWeight: '600' },
+  pillSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
+  pillText: { fontSize: 14, color: '#0F172A', fontWeight: '500' },
+  pillTextSelected: { fontSize: 14, color: '#F97316', fontWeight: '500' },
 
   // ── Toggle row
   toggleRow: {
@@ -505,10 +503,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E6E6E6',
   },
   toggleText: { flex: 1, gap: 4 },
   toggleTitle: { fontSize: 15, fontWeight: '600', color: C.TextPrimary },
@@ -570,8 +566,8 @@ const styles = StyleSheet.create({
   // ── Bucket sections
   bucketSection: { gap: 8 },
   bucketLabel: {
-    fontSize: 13,
-    color: C.TextPrimary,
+    fontSize: 14,
+    color: '#8C8C8C',
     fontWeight: '500',
   },
   emptyText: { fontSize: 15, color: C.TextSecondary },
@@ -581,21 +577,18 @@ const styles = StyleSheet.create({
   todoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: C.Surface,
-    borderRadius: 16,
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 0,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E6E6E6',
     gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
   },
   todoCheckbox: { flexShrink: 0 },
   todoName: {
     flex: 1,
     fontSize: 17,
-    fontWeight: '600',
-    color: C.TextPrimary,
+    fontWeight: '400',
+    color: '#000000',
   },
   todoDuration: { fontSize: 13, color: C.TextSecondary },
 
@@ -604,6 +597,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 20,
-    backgroundColor: C.Bg,
+    backgroundColor: '#FFFFFF',
   },
 });
