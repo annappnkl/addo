@@ -580,7 +580,6 @@ export default function TasksScreen() {
         {/* ── Wide: classic divider → three columns ─────────────────────── */}
         {isWide && (
           <>
-            <View style={styles.divider} />
             <View style={[styles.bucketsContainer, styles.bucketsContainerWide]}>
               {BUCKETS.map((bucket) => (
                 <BucketSection
@@ -641,7 +640,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: 40,
     paddingTop: 32,
-    marginBottom: 24,
+    marginBottom: 40,
     gap: 16,
   },
   inputBar: {
@@ -748,7 +747,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: C.Border },
 
   // ── Wide three-column layout
-  bucketsContainer: { paddingHorizontal: 80, paddingTop: 16 },
+  bucketsContainer: { paddingHorizontal: 80, paddingTop: 0 },
   bucketsContainerWide: { flexDirection: 'row', gap: 26, alignItems: 'flex-start' },
   bucketSection: {},
   bucketSectionWide: { flex: 1 },
