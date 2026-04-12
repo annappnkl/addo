@@ -249,6 +249,7 @@ function TaskCard({
             onChangeText={(v) => onDraftChange({ ...draft, title: v })}
             placeholder="Task title"
             placeholderTextColor={C.TextDisabled}
+            multiline
             autoFocus
           />
           <TouchableOpacity onPress={onTap} activeOpacity={0.7}>
