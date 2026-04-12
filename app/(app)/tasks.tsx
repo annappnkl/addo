@@ -796,8 +796,8 @@ const styles = StyleSheet.create({
   taskRow: {
     paddingTop: 16,
     paddingBottom: 16,
-    paddingLeft: 32,
-    paddingRight: 42,
+    paddingLeft: 16,
+    paddingRight: 16,
     borderBottomWidth: 0.5,
     borderBottomColor: '#E6E6E6',
     flexDirection: 'row',
