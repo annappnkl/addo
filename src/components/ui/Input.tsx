@@ -15,14 +15,14 @@ export function PillInput(props: PillInputProps) {
   );
 }
 
-type FieldInputProps = Omit<TextInputProps, 'style'>;
+type FieldInputProps = Omit<TextInputProps, 'style'> & { style?: TextInputProps['style'] };
 
 /** Bordered rectangle input — used in forms/edit panels */
-export function FieldInput(props: FieldInputProps) {
+export function FieldInput({ style, ...props }: FieldInputProps) {
   const [focused, setFocused] = useState(false);
   return (
     <TextInput
-      style={[styles.field, focused && styles.fieldFocused]}
+      style={[styles.field, focused && styles.fieldFocused, style]}
       placeholderTextColor={Colors.textMuted}
       onFocus={(e) => {
         setFocused(true);

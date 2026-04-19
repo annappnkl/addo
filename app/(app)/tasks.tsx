@@ -18,6 +18,14 @@ import { supabase } from '../../src/db/supabase';
 import { getTodosByUser, insertTodo, deleteTodo, updateTodo } from '../../src/db/dao';
 import { bucketTotalMinutes, formatMinutes, moveBucketCircular, splitByDuration } from '../../src/logic/todos';
 import type { Bucket, Todo } from '../../src/types';
+import {
+  Colors,
+  Chip,
+  FieldInput,
+  ItemName,
+  ItemMeta,
+  SectionHeader,
+} from '../../src/components/ui';
 
 // ─── Asset icons (paths from assets/*.svg, viewBox matches Material Symbols) ──
 function ArrowLeftIcon({ color, size = 20 }: { color: string; size?: number }) {
@@ -41,20 +49,6 @@ function TrashIcon({ color, size = 20 }: { color: string; size?: number }) {
     </Svg>
   );
 }
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const C = {
-  Bg: '#FFFFFF',
-  Surface: '#FFFFFF',
-  SurfaceAlt: '#F0EEE9',
-  TextPrimary: '#1A1A1A',
-  TextSecondary: '#6B7280',
-  TextDisabled: '#B0AAAA',
-  Accent: '#F97316',
-  AccentLight: '#FFF0E6',
-  Destructive: '#EF4444',
-  Border: '#E5E3DE',
-} as const;
 
 const DURATION_OPTIONS = [5, 10, 15, 20, 30] as const;
 type DurationOption = (typeof DURATION_OPTIONS)[number];
@@ -95,8 +89,6 @@ function EditForm({
   draft: EditDraft;
   onChange: (d: EditDraft) => void;
 }) {
-  const [notesFocused, setNotesFocused] = useState(false);
-
   return (
     <View style={styles.editForm}>
       <ScrollView
@@ -106,29 +98,23 @@ function EditForm({
         contentContainerStyle={styles.pillsRow}
       >
         {DURATION_OPTIONS.map((d) => (
-          <TouchableOpacity
+          <Chip
             key={d}
-            style={[styles.pill, draft.duration === d && styles.pillSelected]}
+            label={`${d} min`}
+            selected={draft.duration === d}
             onPress={() => onChange({ ...draft, duration: d })}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.pillText, draft.duration === d && styles.pillTextSelected]}>
-              {d} min
-            </Text>
-          </TouchableOpacity>
+            variant="fixed"
+          />
         ))}
       </ScrollView>
 
-      <TextInput
-        style={[styles.editInput, styles.editNotesInput, notesFocused && styles.editInputFocused]}
+      <FieldInput
         value={draft.notes}
         onChangeText={(v) => onChange({ ...draft, notes: v })}
         placeholder="Add a note, link, or anything else…"
-        placeholderTextColor={C.TextDisabled}
         multiline
         numberOfLines={3}
-        onFocus={() => setNotesFocused(true)}
-        onBlur={() => setNotesFocused(false)}
+        style={styles.editNotesInput}
       />
     </View>
   );
@@ -184,27 +170,27 @@ function TaskCard({
   // Duration text and icons occupy the same space; opacity toggles between them.
   const rightSlot = (
     <View style={styles.rightSlot}>
-      <Text style={[styles.taskDuration, { opacity: showIcons ? 0 : 1 }]}>
-        {formatMinutes(todo.estimated_minutes)}
-      </Text>
+      <View style={{ opacity: showIcons ? 0 : 1 }}>
+        <ItemMeta>{formatMinutes(todo.estimated_minutes)}</ItemMeta>
+      </View>
       <View style={[styles.iconsRow, { opacity: showIcons ? 1 : 0 }]}>
         <TouchableOpacity
           onPress={() => onMoveBucket('left')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <ArrowLeftIcon color={C.TextSecondary} size={16} />
+          <ArrowLeftIcon color={Colors.textSecondary} size={16} />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => onMoveBucket('right')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <ArrowRightIcon color={C.TextSecondary} size={16} />
+          <ArrowRightIcon color={Colors.textSecondary} size={16} />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={onDelete}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <TrashIcon color={C.Destructive} size={16} />
+          <TrashIcon color={Colors.destructive} size={16} />
         </TouchableOpacity>
       </View>
     </View>
@@ -226,12 +212,12 @@ function TaskCard({
               value={draft.title}
               onChangeText={(v) => onDraftChange({ ...draft, title: v })}
               placeholder="Task title"
-              placeholderTextColor={C.TextDisabled}
+              placeholderTextColor={Colors.textDisabled}
               multiline
               autoFocus
             />
             <TouchableOpacity onPress={onTap} activeOpacity={0.7}>
-              <Feather name="chevron-up" size={16} color={C.TextSecondary} />
+              <Feather name="chevron-up" size={16} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
           <EditForm
@@ -249,7 +235,7 @@ function TaskCard({
         onMouseLeave={onHoverOut}
       >
         <TouchableOpacity onPress={onTap} style={styles.taskRowTapArea} activeOpacity={0.8}>
-          <Text style={styles.taskName}>{todo.title}</Text>
+          <ItemName>{todo.title}</ItemName>
         </TouchableOpacity>
         {rightSlot}
       </HoverableView>
@@ -262,16 +248,17 @@ function TaskCard({
       <Pressable style={rowStyle} onPress={() => {}}>
         <View style={styles.taskRowHeader}>
           <TextInput
+            ref={titleInputRef}
             style={styles.taskNameInput}
             value={draft.title}
             onChangeText={(v) => onDraftChange({ ...draft, title: v })}
             placeholder="Task title"
-            placeholderTextColor={C.TextDisabled}
+            placeholderTextColor={Colors.textDisabled}
             multiline
             autoFocus
           />
           <TouchableOpacity onPress={onTap} activeOpacity={0.7}>
-            <Feather name="chevron-up" size={16} color={C.TextSecondary} />
+            <Feather name="chevron-up" size={16} color={Colors.textSecondary} />
           </TouchableOpacity>
         </View>
         <EditForm
@@ -285,7 +272,7 @@ function TaskCard({
   return (
     <View style={rowStyle}>
       <TouchableOpacity onPress={onSelect} style={styles.taskRowTapArea} activeOpacity={0.8}>
-        <Text style={styles.taskName}>{todo.title}</Text>
+        <ItemName>{todo.title}</ItemName>
       </TouchableOpacity>
       {rightSlot}
     </View>
@@ -332,15 +319,14 @@ function BucketSection({
     <View style={[styles.bucketSection, isWide ? styles.bucketSectionWide : styles.bucketSectionNarrow]}>
       {!hideHeader && (
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionLabel}>{bucket}</Text>
-          {/* <Text style={styles.sectionTotal}>{formatMinutes(bucketTotalMinutes(todos, bucket))}</Text> */}
+          <SectionHeader label={bucket} />
         </View>
       )}
 
       {bucketTodos.length === 0 ? (
         <Text style={styles.emptyText}>Nothing here yet.</Text>
       ) : (
-        bucketTodos.map((todo, index) => (
+        bucketTodos.map((todo) => (
           <TaskCard
             key={todo.id}
             todo={todo}
@@ -509,7 +495,7 @@ export default function TasksScreen() {
             <TextInput
               style={styles.inputBarText}
               placeholder="What is there to do?"
-              placeholderTextColor="#64758B"
+              placeholderTextColor={Colors.textSecondary}
               value={title}
               onChangeText={setTitle}
               returnKeyType="done"
@@ -529,35 +515,28 @@ export default function TasksScreen() {
           <View style={styles.chipsRow}>
             <View style={styles.chipsGroup}>
               {BUCKETS.map((b) => (
-                <TouchableOpacity
+                <Chip
                   key={b}
-                  style={[styles.bucketChip, selectedBucket === b && styles.bucketChipSelected]}
+                  label={b}
+                  selected={selectedBucket === b}
                   onPress={() => setSelectedBucket(b)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.bucketChipText, selectedBucket === b && styles.bucketChipTextSelected]}>
-                    {b}
-                  </Text>
-                </TouchableOpacity>
+                />
               ))}
             </View>
 
             <View style={styles.chipsGroup}>
               {DURATION_OPTIONS.map((d) => (
-                <TouchableOpacity
+                <Chip
                   key={d}
-                  style={[styles.durationChip, selectedDuration === d && styles.durationChipSelected]}
+                  label={`${d}'`}
+                  selected={selectedDuration === d}
                   onPress={() => {
                     setSelectedDuration(selectedDuration === d ? null : d);
                     setShowCustomDuration(false);
                     setCustomDurationInput('');
                   }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.durationChipText, selectedDuration === d && styles.durationChipTextSelected]}>
-                    {d}'
-                  </Text>
-                </TouchableOpacity>
+                  variant="fixed"
+                />
               ))}
               {showCustomDuration ? (
                 <TextInput
@@ -565,7 +544,7 @@ export default function TasksScreen() {
                   value={customDurationInput}
                   onChangeText={setCustomDurationInput}
                   placeholder="e.g. 45"
-                  placeholderTextColor="#64758B"
+                  placeholderTextColor={Colors.textSecondary}
                   keyboardType="numeric"
                   autoFocus
                 />
@@ -641,7 +620,7 @@ export default function TasksScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.Bg },
+  root: { flex: 1, backgroundColor: Colors.bg },
   scrollContent: { paddingBottom: 48 },
 
   // ── Add task area
@@ -656,10 +635,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F3F3F3',
+    backgroundColor: Colors.inputBg,
     borderRadius: 9999,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: Colors.borderInput,
     height: 43,
     paddingLeft: 24,
     paddingRight: 4,
@@ -668,7 +647,7 @@ const styles = StyleSheet.create({
   inputBarText: {
     flex: 1,
     fontSize: 16,
-    color: '#0F172A',
+    color: Colors.textOn,
     backgroundColor: 'transparent',
     // @ts-ignore — web-only: suppress browser default focus outline
     outlineWidth: 0,
@@ -677,7 +656,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#F97316',
+    backgroundColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -687,73 +666,35 @@ const styles = StyleSheet.create({
     gap: 40,
   },
   chipsGroup: { flexDirection: 'row', gap: 6 },
-  bucketChip: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 9999,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-  },
-  bucketChipSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
-  bucketChipText: { color: '#0F172A', fontSize: 14, fontWeight: '500' },
-  bucketChipTextSelected: { color: '#F97316' },
-  durationChip: {
-    width: 64,
-    height: 38,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 9999,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  durationChipSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
-  durationChipText: { color: '#0F172A', fontSize: 14, fontWeight: '500' },
-  durationChipTextSelected: { color: '#F97316' },
   typeATimeChip: {
     width: 128,
     height: 38,
     paddingVertical: 8,
     paddingHorizontal: 21,
-    backgroundColor: '#F3F3F3',
+    backgroundColor: Colors.inputBg,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: Colors.borderInput,
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  typeATimeChipText: { color: '#64758B', fontSize: 14, fontWeight: '500' },
+  typeATimeChipText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
   timeInlineInput: {
     width: 128,
     height: 38,
     borderRadius: 9999,
     borderWidth: 1,
-    borderColor: '#F97316',
-    backgroundColor: '#FFF0E5',
+    borderColor: Colors.accent,
+    backgroundColor: Colors.accentLight,
     paddingHorizontal: 21,
     fontSize: 14,
-    color: '#0F172A',
+    color: Colors.textOn,
     textAlign: 'center',
     // @ts-ignore — web-only: suppress browser default focus outline
     outlineWidth: 0,
   },
   pillsScroll: { flexGrow: 0 },
   pillsRow: { flexDirection: 'row', gap: 8 },
-  pill: {
-    backgroundColor: C.SurfaceAlt,
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  pillSelected: { backgroundColor: C.AccentLight, borderColor: C.Accent },
-  pillText: { fontSize: 13, color: C.TextSecondary },
-  pillTextSelected: { color: C.Accent, fontWeight: '600' },
-  divider: { height: 1, backgroundColor: C.Border },
 
   // ── Wide three-column layout
   bucketsContainer: { paddingHorizontal: 80, paddingTop: 0 },
@@ -770,13 +711,11 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     paddingRight: 26,
     borderBottomWidth: 1,
-    borderBottomColor: '#D8D8D8',
+    borderBottomColor: Colors.borderHeader,
   },
-  sectionLabel: { color: '#8C8C8C', fontSize: 14, fontWeight: '500' },
-  sectionTotal: { color: '#8C8C8C', fontSize: 14, fontWeight: '500' },
   emptyText: {
     fontSize: 15,
-    color: C.TextSecondary,
+    color: Colors.textSecondary,
     textAlign: 'center',
     paddingVertical: 24,
   },
@@ -794,19 +733,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
-  tabButtonActive: { borderBottomColor: C.Accent },
-  tabLabel: { fontSize: 15, fontWeight: '600', color: C.TextSecondary },
-  tabLabelActive: { color: C.Accent },
-  tabTotal: { fontSize: 13, color: C.TextSecondary, marginTop: 2 },
-  tabTotalActive: { color: C.Accent },
-  tabDivider: { height: 1, backgroundColor: C.Border, marginHorizontal: 20 },
+  tabButtonActive: { borderBottomColor: Colors.accent },
+  tabLabel: { fontSize: 15, fontWeight: '600', color: Colors.textSecondary },
+  tabLabelActive: { color: Colors.accent },
+  tabTotal: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  tabTotalActive: { color: Colors.accent },
+  tabDivider: { height: 1, backgroundColor: Colors.borderWarm, marginHorizontal: 20 },
 
   // ── Flat task rows (both layouts)
   taskRow: {
     paddingLeft: 16,
     paddingRight: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#E6E6E6',
+    borderBottomColor: Colors.borderSubtle,
     flexDirection: 'row',
     alignItems: 'stretch',
     backgroundColor: 'transparent',
@@ -833,19 +772,17 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 20,
   },
-  taskName: { flex: 1, fontSize: 16, fontWeight: '400', color: '#000000' },
   taskNameInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '400',
-    color: '#000000',
+    color: Colors.taskName,
     backgroundColor: 'transparent',
     paddingVertical: 0,
     paddingHorizontal: 0,
     // @ts-ignore — web-only: suppress browser default focus outline
     outlineWidth: 0,
   },
-  taskDuration: { fontSize: 12, fontWeight: '300', color: '#8C8C8C' },
 
   // Right slot: duration text and icons occupy the same space, opacity-toggled
   rightSlot: {
@@ -870,37 +807,5 @@ const styles = StyleSheet.create({
 
   // ── Edit form (expands within the row)
   editForm: { gap: 10, width: '100%', paddingTop: 4, paddingBottom: 20 },
-  editInput: {
-    backgroundColor: C.Surface,
-    borderWidth: 1,
-    borderColor: C.Border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: C.TextPrimary,
-  },
-  editInputFocused: { borderColor: C.Accent },
   editNotesInput: { minHeight: 72, textAlignVertical: 'top' },
-  editActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  editSaveBtn: {
-    flex: 1,
-    backgroundColor: C.Accent,
-    borderRadius: 28,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  editSaveBtnDisabled: { backgroundColor: C.Border },
-  editSaveBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  editSaveBtnTextDisabled: { color: C.TextDisabled },
-  editCancelBtn: {
-    flex: 1,
-    backgroundColor: C.SurfaceAlt,
-    borderRadius: 28,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  editCancelBtnText: { color: C.TextPrimary, fontSize: 15, fontWeight: '600' },
 });
