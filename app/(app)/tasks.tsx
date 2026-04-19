@@ -390,18 +390,21 @@ export default function TasksScreen() {
 
   async function handleAdd() {
     if (!userId || !canAdd) return;
-    const minutes = selectedDuration ?? parseInt(customDurationInput, 10);
-    if (!minutes || minutes <= 0) return;
+    const minutes = selectedDuration ?? (parseInt(customDurationInput, 10) || 0);
     setAdding(true);
-    const tasks = splitByDuration(title.trim(), selectedBucket, minutes);
-    for (const t of tasks) {
-      await insertTodo(userId, t.title, t.durationMinutes, t.bucket);
+    if (minutes > 0) {
+      const tasks = splitByDuration(title.trim(), selectedBucket, minutes);
+      for (const t of tasks) {
+        await insertTodo(userId, t.title, t.durationMinutes, t.bucket);
+      }
+    } else {
+      await insertTodo(userId, title.trim(), 0, selectedBucket);
     }
     setTitle('');
     setSelectedDuration(null);
     setShowCustomDuration(false);
     setCustomDurationInput('');
-    setSelectedBucket('Must');
+    // intentionally not resetting selectedBucket — user stays on their chosen bucket
     await loadTodos(userId);
     setAdding(false);
   }
