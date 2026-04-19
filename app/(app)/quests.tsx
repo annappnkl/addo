@@ -23,20 +23,13 @@ import {
   deleteSideQuest,
 } from '../../src/db/dao';
 import type { SideQuest } from '../../src/types';
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const C = {
-  Bg: '#FFFFFF',
-  Surface: '#FFFFFF',
-  SurfaceAlt: '#F0EEE9',
-  TextPrimary: '#1A1A1A',
-  TextSecondary: '#6B7280',
-  TextDisabled: '#B0AAAA',
-  Accent: '#F97316',
-  AccentLight: '#FFF0E6',
-  Destructive: '#EF4444',
-  Border: '#E5E3DE',
-} as const;
+import {
+  Colors,
+  Chip,
+  FieldInput,
+  ItemName,
+  ItemMeta,
+} from '../../src/components/ui';
 
 const DURATION_OPTIONS = [3, 5, 10, 15] as const;
 type DurationOption = (typeof DURATION_OPTIONS)[number];
@@ -84,16 +77,12 @@ function DurationPills({
       contentContainerStyle={styles.pillsRow}
     >
       {DURATION_OPTIONS.map((d) => (
-        <TouchableOpacity
+        <Chip
           key={d}
-          style={[styles.pill, selected === d && styles.pillSelected]}
+          label={`${d}m`}
+          selected={selected === d}
           onPress={() => onSelect(d)}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.pillText, selected === d && styles.pillTextSelected]}>
-            {d}m
-          </Text>
-        </TouchableOpacity>
+        />
       ))}
     </ScrollView>
   );
@@ -115,13 +104,13 @@ function LinkInput({
 }) {
   return (
     <View style={[styles.linkInputWrap, focused && styles.linkInputWrapFocused]}>
-      <Feather name="link" size={16} color={C.TextDisabled} style={styles.linkIcon} />
+      <Feather name="link" size={16} color={Colors.textDisabled} style={styles.linkIcon} />
       <TextInput
         style={styles.linkInputField}
         value={value}
         onChangeText={onChangeText}
         placeholder="Optional link (YouTube, article…)"
-        placeholderTextColor={C.TextDisabled}
+        placeholderTextColor={Colors.textDisabled}
         autoCapitalize="none"
         keyboardType="url"
         onFocus={onFocus}
@@ -145,21 +134,15 @@ function EditForm({
   onSave: () => void;
   onCancel: () => void;
 }) {
-  const [titleFocused, setTitleFocused] = useState(false);
   const [linkFocused, setLinkFocused] = useState(false);
-  const [notesFocused, setNotesFocused] = useState(false);
   const canSave = draft.title.trim().length > 0 && draft.duration !== null;
 
   return (
     <View style={styles.editForm}>
-      <TextInput
-        style={[styles.editInput, titleFocused && styles.editInputFocused]}
+      <FieldInput
         value={draft.title}
         onChangeText={(v) => onChange({ ...draft, title: v })}
         placeholder="Side quest title"
-        placeholderTextColor={C.TextDisabled}
-        onFocus={() => setTitleFocused(true)}
-        onBlur={() => setTitleFocused(false)}
         autoFocus
       />
 
@@ -176,20 +159,13 @@ function EditForm({
         onBlur={() => setLinkFocused(false)}
       />
 
-      <TextInput
-        style={[
-          styles.editInput,
-          styles.editNotesInput,
-          notesFocused && styles.editInputFocused,
-        ]}
+      <FieldInput
         value={draft.notes}
         onChangeText={(v) => onChange({ ...draft, notes: v })}
         placeholder="Notes…"
-        placeholderTextColor={C.TextDisabled}
         multiline
         numberOfLines={3}
-        onFocus={() => setNotesFocused(true)}
-        onBlur={() => setNotesFocused(false)}
+        style={styles.editNotesInput}
       />
 
       <View style={styles.editActions}>
@@ -261,7 +237,7 @@ function SideQuestCard({
   const expandedHeader = (
     <TouchableOpacity onPress={onTap} style={styles.expandedHeader} activeOpacity={0.7}>
       <Text style={styles.sqName} numberOfLines={1}>{sq.title}</Text>
-      <Feather name="chevron-up" size={16} color={C.TextSecondary} />
+      <Feather name="chevron-up" size={16} color={Colors.textSecondary} />
     </TouchableOpacity>
   );
 
@@ -294,8 +270,8 @@ function SideQuestCard({
       >
         <View style={styles.cardRow}>
           <TouchableOpacity onPress={onTap} style={styles.cardText} activeOpacity={0.8}>
-            <Text style={styles.sqName}>{sq.title}</Text>
-            <Text style={styles.sqDuration}>{sq.duration_minutes}m</Text>
+            <ItemName>{sq.title}</ItemName>
+            <ItemMeta>{`${sq.duration_minutes}m`}</ItemMeta>
           </TouchableOpacity>
 
           <View style={styles.cardRight}>
@@ -305,7 +281,7 @@ function SideQuestCard({
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.linkIconBtn}
               >
-                <Feather name="external-link" size={16} color={C.Accent} />
+                <Feather name="external-link" size={16} color={Colors.accent} />
               </TouchableOpacity>
             ) : null}
 
@@ -318,7 +294,7 @@ function SideQuestCard({
                 onPress={onDelete}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Feather name="trash-2" size={20} color={C.Destructive} />
+                <Feather name="trash-2" size={20} color={Colors.destructive} />
               </TouchableOpacity>
             </View>
           </View>
@@ -357,8 +333,8 @@ function SideQuestCard({
         <TouchableOpacity onPress={onTap} activeOpacity={0.8}>
           <View style={styles.cardRow}>
             <View style={styles.cardText}>
-              <Text style={styles.sqName}>{sq.title}</Text>
-              <Text style={styles.sqDuration}>{sq.duration_minutes}m</Text>
+              <ItemName>{sq.title}</ItemName>
+              <ItemMeta>{`${sq.duration_minutes}m`}</ItemMeta>
             </View>
             {sq.link ? (
               <TouchableOpacity
@@ -366,7 +342,7 @@ function SideQuestCard({
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.linkIconBtn}
               >
-                <Feather name="external-link" size={16} color={C.Accent} />
+                <Feather name="external-link" size={16} color={Colors.accent} />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -474,7 +450,7 @@ export default function QuestsScreen() {
           <TextInput
             style={[styles.titleInput, titleFocused && styles.titleInputFocused]}
             placeholder="e.g. Drink a glass of water"
-            placeholderTextColor={C.TextDisabled}
+            placeholderTextColor={Colors.textDisabled}
             value={title}
             onChangeText={setTitle}
             onFocus={() => setTitleFocused(true)}
@@ -538,7 +514,7 @@ export default function QuestsScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.Bg },
+  root: { flex: 1, backgroundColor: Colors.bg },
   scrollContent: { paddingBottom: 48 },
 
   // ── Header
@@ -547,7 +523,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 4,
   },
-  screenTitle: { fontSize: 22, fontWeight: '700', color: C.TextPrimary },
+  screenTitle: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
 
   // ── Add area
   addArea: {
@@ -557,68 +533,57 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   titleInput: {
-    backgroundColor: '#F3F3F3',
+    backgroundColor: Colors.inputBg,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: Colors.borderInput,
     borderRadius: 9999,
     paddingHorizontal: 16,
     height: 48,
     fontSize: 15,
-    color: C.TextPrimary,
+    color: Colors.textPrimary,
     // @ts-ignore — web-only: suppress browser default focus outline
     outlineWidth: 0,
   },
-  titleInputFocused: { borderColor: C.Accent },
+  titleInputFocused: { borderColor: Colors.accent },
 
   // ── Duration pills
   pillsScroll: { flexGrow: 0 },
   pillsRow: { flexDirection: 'row', gap: 8 },
-  pill: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  pillSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
-  pillText: { fontSize: 14, color: '#0F172A', fontWeight: '500' },
-  pillTextSelected: { color: '#F97316', fontWeight: '500' },
 
   // ── Link input
   linkInputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: C.Surface,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: C.Border,
+    borderColor: Colors.borderWarm,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 48,
   },
-  linkInputWrapFocused: { borderColor: C.Accent },
+  linkInputWrapFocused: { borderColor: Colors.accent },
   linkIcon: { marginRight: 8 },
   linkInputField: {
     flex: 1,
     fontSize: 15,
-    color: C.TextPrimary,
+    color: Colors.textPrimary,
     // @ts-ignore — web-only: suppress browser default focus outline
     outlineWidth: 0,
   },
 
   // ── Add button
   addButton: {
-    backgroundColor: C.Accent,
+    backgroundColor: Colors.accent,
     borderRadius: 28,
     height: 52,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  addButtonDisabled: { backgroundColor: C.Border },
+  addButtonDisabled: { backgroundColor: Colors.borderWarm },
   addButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  addButtonTextDisabled: { color: C.TextDisabled },
+  addButtonTextDisabled: { color: Colors.textDisabled },
 
-  divider: { height: 1, backgroundColor: '#E6E6E6' },
+  divider: { height: 1, backgroundColor: Colors.borderSubtle },
 
   // ── List area
   listArea: {
@@ -628,7 +593,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     fontSize: 15,
-    color: C.TextSecondary,
+    color: Colors.textSecondary,
     textAlign: 'center',
     paddingVertical: 24,
   },
@@ -637,8 +602,7 @@ const styles = StyleSheet.create({
   cardRow: { flexDirection: 'row', alignItems: 'center' },
   cardText: { flex: 1, marginRight: 8 },
   cardRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sqName: { fontSize: 20, fontWeight: '400', color: '#000000', marginBottom: 4 },
-  sqDuration: { fontSize: 12, fontWeight: '300', color: '#8C8C8C' },
+  sqName: { fontSize: 20, fontWeight: '400', color: Colors.taskName, marginBottom: 4 },
   linkIconBtn: { padding: 4 },
   trashWrap: { padding: 4 },
 
@@ -653,7 +617,7 @@ const styles = StyleSheet.create({
   // ── Web cards
   cardWeb: {
     borderBottomWidth: 0.5,
-    borderBottomColor: '#E6E6E6',
+    borderBottomColor: Colors.borderSubtle,
     paddingVertical: 16,
     backgroundColor: 'transparent',
   },
@@ -663,7 +627,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginBottom: 12,
     borderRadius: 16,
-    backgroundColor: C.Destructive,
+    backgroundColor: Colors.destructive,
     overflow: 'hidden',
   },
   deleteReveal: {
@@ -682,47 +646,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardNative: {
-    backgroundColor: C.Surface,
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#E6E6E6',
+    borderBottomColor: Colors.borderSubtle,
   },
   cardNativeStandalone: { marginBottom: 12 },
 
   // ── Edit form
   editForm: { gap: 10 },
-  editInput: {
-    backgroundColor: C.Surface,
-    borderWidth: 1,
-    borderColor: C.Border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: C.TextPrimary,
-  },
-  editInputFocused: { borderColor: C.Accent },
   editNotesInput: { minHeight: 72, textAlignVertical: 'top' },
   editActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
   editSaveBtn: {
     flex: 1,
-    backgroundColor: C.Accent,
+    backgroundColor: Colors.accent,
     borderRadius: 28,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  editSaveBtnDisabled: { backgroundColor: C.Border },
+  editSaveBtnDisabled: { backgroundColor: Colors.borderWarm },
   editSaveBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  editSaveBtnTextDisabled: { color: C.TextDisabled },
+  editSaveBtnTextDisabled: { color: Colors.textDisabled },
   editCancelBtn: {
     flex: 1,
-    backgroundColor: C.SurfaceAlt,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 28,
     height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  editCancelBtnText: { color: C.TextPrimary, fontSize: 15, fontWeight: '600' },
+  editCancelBtnText: { color: Colors.textPrimary, fontSize: 15, fontWeight: '600' },
 });
