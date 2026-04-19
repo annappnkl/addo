@@ -18,7 +18,7 @@ interface ItemNameProps {
 /** Primary task/item name text */
 export function ItemName({ children, muted }: ItemNameProps) {
   return (
-    <Text style={[styles.name, muted && styles.nameMuted]} numberOfLines={1}>
+    <Text style={[styles.name, muted && styles.nameMuted]}>
       {children}
     </Text>
   );

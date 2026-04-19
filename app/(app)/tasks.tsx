@@ -22,7 +22,6 @@ import {
   Colors,
   Chip,
   FieldInput,
-  ItemName,
   ItemMeta,
   SectionHeader,
 } from '../../src/components/ui';
@@ -235,7 +234,7 @@ function TaskCard({
         onMouseLeave={onHoverOut}
       >
         <TouchableOpacity onPress={onTap} style={styles.taskRowTapArea} activeOpacity={0.8}>
-          <ItemName>{todo.title}</ItemName>
+          <Text style={styles.taskName}>{todo.title}</Text>
         </TouchableOpacity>
         {rightSlot}
       </HoverableView>
@@ -272,7 +271,7 @@ function TaskCard({
   return (
     <View style={rowStyle}>
       <TouchableOpacity onPress={onSelect} style={styles.taskRowTapArea} activeOpacity={0.8}>
-        <ItemName>{todo.title}</ItemName>
+        <Text style={styles.taskName}>{todo.title}</Text>
       </TouchableOpacity>
       {rightSlot}
     </View>
@@ -772,9 +771,10 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 20,
   },
+  taskName: { flex: 1, fontSize: 16, fontWeight: '400', color: Colors.taskName },
   taskNameInput: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '400',
     color: Colors.taskName,
     backgroundColor: 'transparent',

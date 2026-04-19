@@ -20,7 +20,6 @@ import {
   Colors,
   Chip,
   PrimaryButton,
-  ItemName,
   ItemMeta,
   SectionHeader,
 } from '../../src/components/ui';
@@ -160,7 +159,7 @@ function TodoRow({
         color={selected ? Colors.accent : Colors.textSecondary}
         style={styles.todoCheckbox}
       />
-      <ItemName>{todo.title}</ItemName>
+      <Text style={styles.todoName} numberOfLines={2}>{todo.title}</Text>
       <ItemMeta>{formatMinutes(todo.estimated_minutes)}</ItemMeta>
     </TouchableOpacity>
   );
@@ -519,6 +518,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   todoCheckbox: { flexShrink: 0 },
+  todoName: { flex: 1, fontSize: 17, fontWeight: '400', color: Colors.taskName },
 
   // ── Start button wrap (sticky bottom)
   startBtnWrap: {

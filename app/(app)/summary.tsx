@@ -18,7 +18,6 @@ import {
   PrimaryButton,
   SecondaryButton,
   ListRow,
-  ItemName,
   ItemMeta,
   SectionHeader,
 } from '../../src/components/ui';
@@ -93,7 +92,7 @@ export default function SummaryScreen() {
               const todo = r.item as Todo;
               return (
                 <ListRow key={`done-${todo.id}-${i}`}>
-                  <ItemName>{todo.title}</ItemName>
+                  <Text style={styles.rollName}>{todo.title}</Text>
                   <ItemMeta>{`${Math.round(r.actualMinutes)}m (est. ${r.estimatedMinutes}m)`}</ItemMeta>
                 </ListRow>
               );
@@ -109,7 +108,7 @@ export default function SummaryScreen() {
               const sq = r.item as SideQuest;
               return (
                 <ListRow key={`sq-${sq.id}-${i}`}>
-                  <ItemName>{sq.title}</ItemName>
+                  <Text style={styles.rollName}>{sq.title}</Text>
                   <ItemMeta>{`${Math.round(r.actualMinutes)}m`}</ItemMeta>
                 </ListRow>
               );
@@ -123,7 +122,7 @@ export default function SummaryScreen() {
             <SectionHeader label="SKIPPED — BACK TO POOL" />
             {result.skippedTodos.map((todo) => (
               <ListRow key={`skipped-${todo.id}`}>
-                <ItemName muted>{todo.title}</ItemName>
+                <Text style={styles.skippedName}>{todo.title}</Text>
               </ListRow>
             ))}
           </View>
@@ -189,6 +188,10 @@ const styles = StyleSheet.create({
 
   // ── Section
   section: { gap: 8 },
+
+  // ── Roll rows
+  rollName: { fontSize: 17, fontWeight: '400', color: Colors.taskName, flex: 1 },
+  skippedName: { fontSize: 17, fontWeight: '400', color: Colors.textMuted },
 
   // ── Escape caption
   escapeCaption: { fontSize: 13, color: Colors.textSecondary },
