@@ -19,19 +19,11 @@ import {
   type SessionResult,
 } from '../../src/logic/sessionStore';
 import type { Todo, SideQuest } from '../../src/types';
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const C = {
-  Bg: '#FFFFFF',
-  Surface: '#FFFFFF',
-  SurfaceAlt: '#F0EEE9',
-  TextPrimary: '#1A1A1A',
-  TextSecondary: '#6B7280',
-  Accent: '#F97316',
-  AccentLight: '#FFF0E6',
-  Destructive: '#EF4444',
-  Border: '#E5E3DE',
-} as const;
+import {
+  Colors,
+  PrimaryButton,
+  SecondaryButton,
+} from '../../src/components/ui';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -460,22 +452,8 @@ function RouletteWorkMode() {
         {/* ── Action buttons ─────────────────────────────────────────────── */}
         {!isOnBreak && (
           <View style={styles.buttonsWrap}>
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={handleDone}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.primaryBtnText}>Done, next</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.secondaryBtn}
-              onPress={handleSkip}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.secondaryBtnText}>Skip</Text>
-            </TouchableOpacity>
-
+            <PrimaryButton label="Done, next" onPress={handleDone} />
+            <SecondaryButton label="Skip" onPress={handleSkip} />
             <TouchableOpacity
               style={styles.ghostBtn}
               onPress={handleSideQuestNow}
@@ -510,13 +488,7 @@ function RouletteWorkMode() {
                 </TouchableOpacity>
               ))}
             </View>
-            <TouchableOpacity
-              style={styles.primaryBtn}
-              onPress={handleFinishSession}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.primaryBtnText}>Finish session</Text>
-            </TouchableOpacity>
+            <PrimaryButton label="Finish session" onPress={handleFinishSession} />
           </View>
         </View>
       )}
@@ -585,13 +557,9 @@ function BreakCard({
           <Text style={styles.subheading}>{currentItem.item.title}</Text>
         </View>
       )}
-      <TouchableOpacity
-        style={[styles.primaryBtn, styles.breakBtn]}
-        onPress={onDone}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.primaryBtnText}>Done, back to work</Text>
-      </TouchableOpacity>
+      <View style={styles.breakBtn}>
+        <PrimaryButton label="Done, back to work" onPress={onDone} />
+      </View>
     </View>
   );
 }
@@ -599,10 +567,10 @@ function BreakCard({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.Bg },
+  root: { flex: 1, backgroundColor: Colors.bg },
 
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { fontSize: 17, color: C.TextSecondary },
+  loadingText: { fontSize: 17, color: Colors.textSecondary },
 
   // ── Top bar
   topBar: {
@@ -612,13 +580,13 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
   },
-  topBarLeft: { fontSize: 13, color: C.TextSecondary },
-  topBarRight: { fontSize: 13, color: C.TextSecondary },
+  topBarLeft: { fontSize: 13, color: Colors.textSecondary },
+  topBarRight: { fontSize: 13, color: Colors.textSecondary },
 
   // ── Progress bar
   progressTrack: {
     height: 4,
-    backgroundColor: C.Border,
+    backgroundColor: Colors.borderWarm,
     marginHorizontal: 20,
     borderRadius: 2,
     overflow: 'hidden',
@@ -626,10 +594,10 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: 4,
-    backgroundColor: C.Accent,
+    backgroundColor: Colors.accent,
     borderRadius: 2,
   },
-  progressFillOver: { backgroundColor: C.Destructive },
+  progressFillOver: { backgroundColor: Colors.destructive },
 
   // ── Scroll
   scroll: { flex: 1 },
@@ -644,76 +612,58 @@ const styles = StyleSheet.create({
 
   // ── Card
   card: {
-    backgroundColor: C.Surface,
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#E6E6E6',
+    borderColor: Colors.borderSubtle,
     gap: 12,
   },
-  cardSideQuest: { backgroundColor: '#FFF0E6' },
+  cardSideQuest: { backgroundColor: Colors.accentLight },
   cardBreak: { backgroundColor: '#F0FFF4' },
 
   // ── Pill label
   pill: {
     alignSelf: 'flex-start',
-    backgroundColor: C.AccentLight,
+    backgroundColor: Colors.accentLight,
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 8,
   },
   pillSideQuest: { backgroundColor: '#FFD9B8', borderRadius: 999 },
   pillBreak: { backgroundColor: '#DCFCE7', borderRadius: 999 },
-  pillText: { fontSize: 13, color: C.Accent, fontWeight: '600' },
+  pillText: { fontSize: 13, color: Colors.accent, fontWeight: '600' },
   pillTextSideQuest: { color: '#F97316' },
   pillTextBreak: { color: '#16A34A' },
 
   // ── Typography
-  display: { fontSize: 32, fontWeight: '700', color: C.TextPrimary },
-  subheading: { fontSize: 17, fontWeight: '600', color: C.TextPrimary },
-  subheadingSecondary: { fontSize: 17, fontWeight: '600', color: C.TextSecondary },
-  caption: { fontSize: 13, color: C.TextSecondary },
-  link: { fontSize: 13, color: C.Accent, fontWeight: '600' },
+  display: { fontSize: 32, fontWeight: '700', color: Colors.textPrimary },
+  subheading: { fontSize: 17, fontWeight: '600', color: Colors.textPrimary },
+  subheadingSecondary: { fontSize: 17, fontWeight: '600', color: Colors.textSecondary },
+  caption: { fontSize: 13, color: Colors.textSecondary },
+  link: { fontSize: 13, color: Colors.accent, fontWeight: '600' },
 
   // ── Break card extras
-  breakBody: { fontSize: 15, color: C.TextSecondary },
+  breakBody: { fontSize: 15, color: Colors.textSecondary },
   breakSqWrap: { gap: 4, marginTop: 8 },
   breakBtn: { marginTop: 8 },
 
   // ── Buttons
   buttonsWrap: { gap: 12 },
-  primaryBtn: {
-    backgroundColor: C.Accent,
-    borderRadius: 28,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-
-  secondaryBtn: {
-    backgroundColor: C.SurfaceAlt,
-    borderRadius: 28,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  secondaryBtnText: { color: C.TextPrimary, fontSize: 17, fontWeight: '600' },
-
   ghostBtn: {
     borderRadius: 28,
     height: 52,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: C.Accent,
+    borderColor: Colors.accent,
   },
-  ghostBtnText: { color: C.Accent, fontSize: 17, fontWeight: '600' },
+  ghostBtnText: { color: Colors.accent, fontSize: 17, fontWeight: '600' },
 
   // ── Footer
   footer: {
     fontSize: 13,
-    color: C.TextSecondary,
+    color: Colors.textSecondary,
     textAlign: 'right',
     marginTop: 8,
   },
@@ -726,21 +676,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   softEndCard: {
-    backgroundColor: C.Surface,
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#E6E6E6',
+    borderColor: Colors.borderSubtle,
     gap: 16,
   },
   softEndTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: C.TextPrimary,
+    color: Colors.textPrimary,
   },
   softEndBody: {
     fontSize: 15,
-    color: C.TextSecondary,
+    color: Colors.textSecondary,
   },
   snoozeRow: {
     flexDirection: 'row',
@@ -748,7 +698,7 @@ const styles = StyleSheet.create({
   },
   snoozeBtn: {
     flex: 1,
-    backgroundColor: C.SurfaceAlt,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 28,
     height: 44,
     justifyContent: 'center',
@@ -757,6 +707,6 @@ const styles = StyleSheet.create({
   snoozeBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: C.TextPrimary,
+    color: Colors.textPrimary,
   },
 });
