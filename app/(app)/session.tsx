@@ -16,6 +16,14 @@ import { getTodosByUser } from '../../src/db/dao';
 import { formatMinutes } from '../../src/logic/todos';
 import { setSessionConfig } from '../../src/logic/sessionStore';
 import type { Bucket, SideQuest, Todo } from '../../src/types';
+import {
+  Colors,
+  Chip,
+  PrimaryButton,
+  ItemName,
+  ItemMeta,
+  SectionHeader,
+} from '../../src/components/ui';
 
 // getSideQuestsByUser is not yet in the DAO — another agent owns that file.
 // We check for it at runtime and degrade gracefully if absent.
@@ -27,21 +35,6 @@ function resolveSideQuestsFn(): GetSideQuestsFn | undefined {
   const fn = dao['getSideQuestsByUser'];
   return typeof fn === 'function' ? (fn as GetSideQuestsFn) : undefined;
 }
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const C = {
-  Bg: '#FFFFFF',
-  Surface: '#FFFFFF',
-  SurfaceAlt: '#F0EEE9',
-  TextPrimary: '#1A1A1A',
-  TextSecondary: '#6B7280',
-  TextDisabled: '#B0AAAA',
-  Accent: '#F97316',
-  AccentLight: '#FFF0E6',
-  AccentDark: '#EA6C0A',
-  Destructive: '#EF4444',
-  Border: '#E5E3DE',
-} as const;
 
 // ─── Duration options (in minutes) ───────────────────────────────────────────
 const DURATION_OPTIONS: { label: string; minutes: number }[] = [
@@ -103,21 +96,14 @@ function ConfigureStep({
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>How long?</Text>
         <View style={styles.pillsRow}>
-          {DURATION_OPTIONS.map((opt) => {
-            const selected = durationMinutes === opt.minutes;
-            return (
-              <TouchableOpacity
-                key={opt.minutes}
-                style={[styles.pill, selected && styles.pillSelected]}
-                onPress={() => onDurationChange(opt.minutes)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.pillText, selected && styles.pillTextSelected]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          {DURATION_OPTIONS.map((opt) => (
+            <Chip
+              key={opt.minutes}
+              label={opt.label}
+              selected={durationMinutes === opt.minutes}
+              onPress={() => onDurationChange(opt.minutes)}
+            />
+          ))}
         </View>
       </View>
 
@@ -125,21 +111,14 @@ function ConfigureStep({
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Break every</Text>
         <View style={styles.pillsRow}>
-          {INTERVAL_OPTIONS.map((opt) => {
-            const selected = intervalMinutes === opt.minutes;
-            return (
-              <TouchableOpacity
-                key={opt.minutes}
-                style={[styles.pill, selected && styles.pillSelected]}
-                onPress={() => onIntervalChange(opt.minutes)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.pillText, selected && styles.pillTextSelected]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          {INTERVAL_OPTIONS.map((opt) => (
+            <Chip
+              key={opt.minutes}
+              label={opt.label}
+              selected={intervalMinutes === opt.minutes}
+              onPress={() => onIntervalChange(opt.minutes)}
+            />
+          ))}
         </View>
       </View>
 
@@ -152,22 +131,13 @@ function ConfigureStep({
         <Switch
           value={shuffleAll}
           onValueChange={onShuffleAllChange}
-          trackColor={{ false: C.Border, true: C.Accent }}
-          thumbColor={C.Surface}
+          trackColor={{ false: Colors.borderWarm, true: Colors.accent }}
+          thumbColor={Colors.surface}
         />
       </View>
 
       {/* ── Continue button ───────────────────────────────────────────── */}
-      <TouchableOpacity
-        style={[styles.primaryBtn, !canContinue && styles.primaryBtnDisabled]}
-        onPress={onContinue}
-        disabled={!canContinue}
-        activeOpacity={0.85}
-      >
-        <Text style={[styles.primaryBtnText, !canContinue && styles.primaryBtnTextDisabled]}>
-          {buttonLabel}
-        </Text>
-      </TouchableOpacity>
+      <PrimaryButton label={buttonLabel} onPress={onContinue} disabled={!canContinue} />
     </ScrollView>
   );
 }
@@ -187,13 +157,11 @@ function TodoRow({
       <Feather
         name={selected ? 'check-square' : 'square'}
         size={20}
-        color={selected ? C.Accent : C.TextSecondary}
+        color={selected ? Colors.accent : Colors.textSecondary}
         style={styles.todoCheckbox}
       />
-      <Text style={styles.todoName} numberOfLines={2}>
-        {todo.title}
-      </Text>
-      <Text style={styles.todoDuration}>{formatMinutes(todo.estimated_minutes)}</Text>
+      <ItemName>{todo.title}</ItemName>
+      <ItemMeta>{formatMinutes(todo.estimated_minutes)}</ItemMeta>
     </TouchableOpacity>
   );
 }
@@ -234,7 +202,7 @@ function PickerStep({
       {/* ── Header row ──────────────────────────────────────────────── */}
       <View style={styles.pickerHeader}>
         <TouchableOpacity onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="chevron-left" size={24} color={C.Accent} />
+          <Feather name="chevron-left" size={24} color={Colors.accent} />
         </TouchableOpacity>
         <Text style={styles.pickerHeaderCaption}>
           Session · {durationLabel} · break every {intervalLabel}
@@ -268,7 +236,7 @@ function PickerStep({
           const bucketTodos = todos.filter((t) => t.bucket === bucket);
           return (
             <View key={bucket} style={styles.bucketSection}>
-              <Text style={styles.bucketLabel}>{bucket}</Text>
+              <SectionHeader label={bucket} />
               {bucketTodos.length === 0 ? (
                 <Text style={styles.emptyText}>Nothing here yet.</Text>
               ) : (
@@ -287,7 +255,7 @@ function PickerStep({
 
         {/* ── Side Quests section ───────────────────────────────────── */}
         <View style={styles.bucketSection}>
-          <Text style={styles.bucketLabel}>Side Quests {'\uD83C\uDFB2'}</Text>
+          <SectionHeader label={'Side Quests \uD83C\uDFB2'} />
           {sideQuestsAvailable ? null : (
             <Text style={styles.captionSecondary}>Side quests coming soon</Text>
           )}
@@ -296,16 +264,11 @@ function PickerStep({
 
       {/* ── Start button ────────────────────────────────────────────── */}
       <View style={styles.startBtnWrap}>
-        <TouchableOpacity
-          style={[styles.primaryBtn, !hasSelection && styles.primaryBtnDisabled]}
+        <PrimaryButton
+          label={'Start Shuffle \u2192'}
           onPress={onStart}
           disabled={!hasSelection}
-          activeOpacity={0.85}
-        >
-          <Text style={[styles.primaryBtnText, !hasSelection && styles.primaryBtnTextDisabled]}>
-            Start Shuffle {'\u2192'}
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
     </SafeAreaView>
   );
@@ -453,7 +416,7 @@ export default function SessionScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.Bg },
+  root: { flex: 1, backgroundColor: Colors.bg },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 24,
@@ -463,16 +426,16 @@ const styles = StyleSheet.create({
 
   // ── Calendar coming soon card
   comingSoonCard: {
-    backgroundColor: C.Surface,
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E6E6E6',
+    borderColor: Colors.borderSubtle,
     opacity: 0.6,
   },
   comingSoonText: {
     fontSize: 13,
-    color: C.TextSecondary,
+    color: Colors.textSecondary,
   },
 
   // ── Sections
@@ -480,47 +443,24 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 17,
     fontWeight: '600',
-    color: C.TextPrimary,
+    color: Colors.textPrimary,
   },
   pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  pillSelected: { backgroundColor: '#FFF0E5', borderColor: '#F97316' },
-  pillText: { fontSize: 14, color: '#0F172A', fontWeight: '500' },
-  pillTextSelected: { fontSize: 14, color: '#F97316', fontWeight: '500' },
 
   // ── Toggle row
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: C.Surface,
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
     gap: 12,
     borderWidth: 1,
-    borderColor: '#E6E6E6',
+    borderColor: Colors.borderSubtle,
   },
   toggleText: { flex: 1, gap: 4 },
-  toggleTitle: { fontSize: 15, fontWeight: '600', color: C.TextPrimary },
-  toggleSubtitle: { fontSize: 13, color: C.TextSecondary },
-
-  // ── Buttons
-  primaryBtn: {
-    backgroundColor: C.Accent,
-    borderRadius: 28,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  primaryBtnDisabled: { backgroundColor: C.Border },
-  primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  primaryBtnTextDisabled: { color: C.TextDisabled },
+  toggleTitle: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  toggleSubtitle: { fontSize: 13, color: Colors.textSecondary },
 
   // ── Step 2 — Picker header
   pickerHeader: {
@@ -533,7 +473,7 @@ const styles = StyleSheet.create({
   },
   pickerHeaderCaption: {
     fontSize: 13,
-    color: C.TextSecondary,
+    color: Colors.textSecondary,
     flex: 1,
     textAlign: 'center',
   },
@@ -542,18 +482,18 @@ const styles = StyleSheet.create({
   progressWrap: { paddingHorizontal: 20, gap: 6, marginBottom: 8 },
   progressTrack: {
     height: 4,
-    backgroundColor: C.Border,
+    backgroundColor: Colors.borderWarm,
     borderRadius: 2,
     overflow: 'hidden',
   },
   progressFill: {
     height: 4,
-    backgroundColor: C.Accent,
+    backgroundColor: Colors.accent,
     borderRadius: 2,
   },
-  progressFillOver: { backgroundColor: C.Destructive },
-  progressLabel: { fontSize: 13, color: C.TextSecondary },
-  progressLabelOver: { color: C.Destructive },
+  progressFillOver: { backgroundColor: Colors.destructive },
+  progressLabel: { fontSize: 13, color: Colors.textSecondary },
+  progressLabelOver: { color: Colors.destructive },
 
   // ── Picker scroll
   pickerScroll: { flex: 1 },
@@ -565,13 +505,8 @@ const styles = StyleSheet.create({
 
   // ── Bucket sections
   bucketSection: { gap: 8 },
-  bucketLabel: {
-    fontSize: 14,
-    color: '#8C8C8C',
-    fontWeight: '500',
-  },
-  emptyText: { fontSize: 15, color: C.TextSecondary },
-  captionSecondary: { fontSize: 13, color: C.TextSecondary },
+  emptyText: { fontSize: 15, color: Colors.textSecondary },
+  captionSecondary: { fontSize: 13, color: Colors.textSecondary },
 
   // ── Todo row
   todoRow: {
@@ -580,23 +515,16 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 0,
     borderBottomWidth: 0.5,
-    borderBottomColor: '#E6E6E6',
+    borderBottomColor: Colors.borderSubtle,
     gap: 12,
   },
   todoCheckbox: { flexShrink: 0 },
-  todoName: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: '400',
-    color: '#000000',
-  },
-  todoDuration: { fontSize: 13, color: C.TextSecondary },
 
   // ── Start button wrap (sticky bottom)
   startBtnWrap: {
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.bg,
   },
 });
