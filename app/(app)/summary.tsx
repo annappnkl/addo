@@ -4,7 +4,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { router, Tabs } from 'expo-router';
@@ -14,20 +13,15 @@ import {
   type RollRecord,
 } from '../../src/logic/sessionStore';
 import type { Todo, SideQuest } from '../../src/types';
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const C = {
-  Bg: '#FFFFFF',
-  Surface: '#FFFFFF',
-  SurfaceAlt: '#F0EEE9',
-  TextPrimary: '#1A1A1A',
-  TextSecondary: '#6B7280',
-  TextDisabled: '#B0AAAA',
-  Accent: '#F97316',
-  AccentLight: '#FFF0E6',
-  Destructive: '#EF4444',
-  Border: '#E5E3DE',
-} as const;
+import {
+  Colors,
+  PrimaryButton,
+  SecondaryButton,
+  ListRow,
+  ItemName,
+  ItemMeta,
+  SectionHeader,
+} from '../../src/components/ui';
 
 function formatMin(totalMin: number): string {
   const h = Math.floor(totalMin / 60);
@@ -94,18 +88,14 @@ export default function SummaryScreen() {
         {/* ── Completed todos ─────────────────────────────────────────── */}
         {completedTodoRolls.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>COMPLETED</Text>
+            <SectionHeader label="COMPLETED" />
             {completedTodoRolls.map((r, i) => {
               const todo = r.item as Todo;
               return (
-                <View key={`done-${todo.id}-${i}`} style={styles.rollItem}>
-                  <View style={styles.rollRow}>
-                    <Text style={styles.rollName}>{todo.title}</Text>
-                    <Text style={styles.rollMeta}>
-                      {Math.round(r.actualMinutes)}m (est. {r.estimatedMinutes}m)
-                    </Text>
-                  </View>
-                </View>
+                <ListRow key={`done-${todo.id}-${i}`}>
+                  <ItemName>{todo.title}</ItemName>
+                  <ItemMeta>{`${Math.round(r.actualMinutes)}m (est. ${r.estimatedMinutes}m)`}</ItemMeta>
+                </ListRow>
               );
             })}
           </View>
@@ -114,18 +104,14 @@ export default function SummaryScreen() {
         {/* ── Side quests ─────────────────────────────────────────────── */}
         {completedSqRolls.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>SIDE QUESTS</Text>
+            <SectionHeader label="SIDE QUESTS" />
             {completedSqRolls.map((r, i) => {
               const sq = r.item as SideQuest;
               return (
-                <View key={`sq-${sq.id}-${i}`} style={styles.rollItem}>
-                  <View style={styles.rollRow}>
-                    <Text style={styles.rollName}>{sq.title}</Text>
-                    <Text style={styles.rollMeta}>
-                      {Math.round(r.actualMinutes)}m
-                    </Text>
-                  </View>
-                </View>
+                <ListRow key={`sq-${sq.id}-${i}`}>
+                  <ItemName>{sq.title}</ItemName>
+                  <ItemMeta>{`${Math.round(r.actualMinutes)}m`}</ItemMeta>
+                </ListRow>
               );
             })}
           </View>
@@ -134,11 +120,11 @@ export default function SummaryScreen() {
         {/* ── Skipped todos ───────────────────────────────────────────── */}
         {result.skippedTodos.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>SKIPPED — BACK TO POOL</Text>
+            <SectionHeader label="SKIPPED — BACK TO POOL" />
             {result.skippedTodos.map((todo) => (
-              <View key={`skipped-${todo.id}`} style={styles.rollItem}>
-                <Text style={styles.skippedName}>{todo.title}</Text>
-              </View>
+              <ListRow key={`skipped-${todo.id}`}>
+                <ItemName muted>{todo.title}</ItemName>
+              </ListRow>
             ))}
           </View>
         )}
@@ -152,21 +138,14 @@ export default function SummaryScreen() {
 
         {/* ── CTAs ────────────────────────────────────────────────────── */}
         <View style={styles.ctaWrap}>
-          <TouchableOpacity
-            style={styles.primaryBtn}
+          <PrimaryButton
+            label="Start another session"
             onPress={() => router.replace('/(app)/session')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.primaryBtnText}>Start another session</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.secondaryBtn}
+          />
+          <SecondaryButton
+            label="Back to tasks"
             onPress={() => router.replace('/(app)/tasks')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.secondaryBtnText}>Back to tasks</Text>
-          </TouchableOpacity>
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -175,7 +154,7 @@ export default function SummaryScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.Bg },
+  root: { flex: 1, backgroundColor: Colors.bg },
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 20,
@@ -185,27 +164,20 @@ const styles = StyleSheet.create({
   },
 
   // ── Typography
-  heading: { fontSize: 22, fontWeight: '700', color: C.TextPrimary },
-  subheading: { fontSize: 17, fontWeight: '600', color: C.TextPrimary },
-  caption: { fontSize: 13, color: C.TextSecondary },
-  accentText: { color: C.Accent },
-  destructiveText: { color: C.Destructive },
+  heading: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
+  subheading: { fontSize: 17, fontWeight: '600', color: Colors.textPrimary },
+  caption: { fontSize: 13, color: Colors.textSecondary },
+  accentText: { color: Colors.accent },
+  destructiveText: { color: Colors.destructive },
 
   // ── Card (header only)
   card: {
-    backgroundColor: C.Surface,
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E6E6E6',
+    borderColor: Colors.borderSubtle,
     gap: 8,
-  },
-
-  // ── Flat roll item row
-  rollItem: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E6E6E6',
-    paddingVertical: 12,
   },
 
   // ── Duration rows
@@ -217,43 +189,10 @@ const styles = StyleSheet.create({
 
   // ── Section
   section: { gap: 8 },
-  sectionLabel: {
-    fontSize: 14,
-    color: '#8C8C8C',
-    fontWeight: '500',
-  },
-
-  // ── Roll row
-  rollRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  rollName: { fontSize: 17, fontWeight: '400', color: '#000000', flex: 1 },
-  rollMeta: { fontSize: 13, color: C.TextSecondary, flexShrink: 0 },
-
-  // ── Skipped
-  skippedName: { fontSize: 17, fontWeight: '400', color: '#8C8C8C' },
 
   // ── Escape caption
-  escapeCaption: { fontSize: 13, color: C.TextSecondary },
+  escapeCaption: { fontSize: 13, color: Colors.textSecondary },
 
   // ── CTAs
   ctaWrap: { gap: 12, marginTop: 8 },
-  primaryBtn: {
-    backgroundColor: C.Accent,
-    borderRadius: 28,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  secondaryBtn: {
-    backgroundColor: C.SurfaceAlt,
-    borderRadius: 28,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  secondaryBtnText: { color: C.TextPrimary, fontSize: 17, fontWeight: '600' },
 });
