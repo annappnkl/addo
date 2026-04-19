@@ -440,7 +440,7 @@ function RouletteWorkMode() {
           />
         ) : currentItem ? (
           <Animated.View style={{ opacity: fadeAnim }}>
-            <ItemCard item={currentItem} now={now} />
+            <ItemCard item={currentItem} taskStartTime={currentItemStartTime} />
           </Animated.View>
         ) : (
           <View style={styles.card}>
@@ -498,10 +498,10 @@ function RouletteWorkMode() {
 
 // ─── Item card ────────────────────────────────────────────────────────────────
 
-function ItemCard({ item, now }: { item: PoolItem; now: number }) {
+function ItemCard({ item, taskStartTime }: { item: PoolItem; taskStartTime: number }) {
   if (item.type === 'todo') {
     const todo = item.item as Todo;
-    const finishBy = now + todo.estimated_minutes * 60 * 1000;
+    const finishBy = taskStartTime + todo.estimated_minutes * 60 * 1000;
     const bucketLabel = todo.bucket === 'Must' ? 'Must' : 'Want';
     return (
       <View style={styles.card}>
