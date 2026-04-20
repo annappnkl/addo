@@ -131,7 +131,8 @@ Features 1–9 drafted previously but being re-planned under the calendar-driven
 8. **Calendar linking** — iCloud (EventKit) + Google Calendar API, area mapping, hashtag routing, planned-vs-actual time tracking.
 9. **Integrations** — Apple Reminders (EventKit), Notion (official API). Bidirectional via hashtag parsing (`#todo`, `#time:30m`, `#area:health`). No LLM needed.
 10. **Analytics / Session History** — retrospective, screen-time style. Per-Area estimate accuracy, session history, usage patterns. Opt-in visit, never shoved in user's face.
-11. **Obsidian integration** — deferred to v5, desktop only.
+11. **macOS focus widget** — a persistent always-on-top floating mini-window (top-right corner) that shows the current roulette task, estimated time, and elapsed time, with Done/Skip buttons so the user never has to switch to the main app. Built as a separate small Electron app connected to the same Supabase backend via Realtime. Prerequisite: active session state must be persisted to Supabase in real-time during a session (currently in-memory only). macOS only. Post-MVP.
+12. **Obsidian integration** — deferred to v5, desktop only.
 
 ## v1 bugs we're fixing along the way
 - Delete buttons decrement `total_work_time` (the *goal*) instead of task time — slowly destroys work goal as you edit tasks. [Code/main.py:178,190](todo-roulette/Code/main.py#L178)
