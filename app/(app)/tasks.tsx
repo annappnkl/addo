@@ -319,6 +319,7 @@ function BucketSection({
       {!hideHeader && (
         <View style={styles.sectionHeader}>
           <SectionHeader label={bucket} />
+          <SectionHeader label={formatMinutes(bucketTotalMinutes(todos, bucket))} />
         </View>
       )}
 

@@ -176,6 +176,16 @@ function RouletteWorkMode() {
 
   const currentItem: PoolItem | undefined = remainingPool[currentIndex % Math.max(remainingPool.length, 1)];
 
+  // ── Dynamic estimated end time (recalculates every tick + after each task)
+  const remainingEstimatedMs = remainingPool.reduce((sum, p) => {
+    const mins = p.type === 'todo'
+      ? (p.item as Todo).estimated_minutes
+      : (p.item as SideQuest).duration_minutes;
+    return sum + mins * 60000;
+  }, 0);
+  const estimatedBreaks = Math.floor(remainingEstimatedMs / (config.breakIntervalMinutes * 60000));
+  const estimatedEndTime = now + remainingEstimatedMs + estimatedBreaks * 5 * 60000;
+
   // ── Transition animation helper
   function animateTransition(callback: () => void) {
     Animated.timing(fadeAnim, {
@@ -465,7 +475,7 @@ function RouletteWorkMode() {
         )}
 
         {/* ── Footer ─────────────────────────────────────────────────────── */}
-        <Text style={styles.footer}>Session ends at {formatHHMM(sessionEndTime)}</Text>
+        <Text style={styles.footer}>Ends ~{formatHHMM(estimatedEndTime)}</Text>
       </ScrollView>
 
       {/* ── Soft end overlay ────────────────────────────────────────────── */}
