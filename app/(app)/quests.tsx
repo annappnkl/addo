@@ -15,6 +15,7 @@ import {
   ViewProps,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../../src/db/supabase';
 import {
   getSideQuestsByUser,
@@ -27,7 +28,6 @@ import {
   Colors,
   Chip,
   FieldInput,
-  ItemName,
   ItemMeta,
 } from '../../src/components/ui';
 
@@ -40,6 +40,14 @@ const SWIPE_WIDTH = 72;
 // typed in base @types/react-native. This typed wrapper avoids `any`.
 type WebHoverExtras = { onMouseEnter?: () => void; onMouseLeave?: () => void };
 const HoverableView = View as React.ComponentType<ViewProps & WebHoverExtras>;
+
+function TrashIcon({ color, size = 20 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 -960 960 960">
+      <Path d="M313.5-177q-23.97 0-40.73-16.77Q256-210.53 256-234.5v-484h-39.5v-25.33H361V-771h238.5v27H744v25.5h-39.5v484.23q0 24.21-16.53 40.74T647-177H313.5ZM679-718.5H281.5v484q0 14 9 23t23 9H647q12 0 22-10t10-22v-484ZM404.5-282H430v-357.5h-25.5V-282Zm126 0H556v-357.5h-25.5V-282Zm-249-436.5v516-516Z" fill={color} />
+    </Svg>
+  );
+}
 
 // ─── Edit draft ───────────────────────────────────────────────────────────────
 interface EditDraft {
@@ -209,6 +217,7 @@ function SideQuestCard({
 }) {
   const [hovered, setHovered] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
+  const showIcons = hovered && !isExpanded;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -264,39 +273,32 @@ function SideQuestCard({
 
     return (
       <HoverableView
-        style={styles.cardWeb}
+        style={styles.sqRow}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <View style={styles.cardRow}>
-          <TouchableOpacity onPress={onTap} style={styles.cardText} activeOpacity={0.8}>
-            <ItemName>{sq.title}</ItemName>
+        <TouchableOpacity onPress={onTap} style={styles.sqRowTapArea} activeOpacity={0.8}>
+          <Text style={styles.sqName}>{sq.title}</Text>
+        </TouchableOpacity>
+        <View style={styles.rightSlot}>
+          <View style={{ opacity: showIcons ? 0 : 1 }}>
             <ItemMeta>{`${sq.duration_minutes}m`}</ItemMeta>
-          </TouchableOpacity>
-
-          <View style={styles.cardRight}>
+          </View>
+          <View style={[styles.iconsRow, { opacity: showIcons ? 1 : 0 }]}>
             {sq.link ? (
               <TouchableOpacity
                 onPress={openLink}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.linkIconBtn}
               >
                 <Feather name="external-link" size={16} color={Colors.accent} />
               </TouchableOpacity>
             ) : null}
-
-            {/* Trash icon — always in DOM, revealed via opacity on hover */}
-            <View
-              style={[styles.trashWrap, { opacity: hovered ? 1 : 0 }]}
-              pointerEvents={hovered ? 'auto' : 'none'}
+            <TouchableOpacity
+              onPress={onDelete}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <TouchableOpacity
-                onPress={onDelete}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Feather name="trash-2" size={20} color={Colors.destructive} />
-              </TouchableOpacity>
-            </View>
+              <TrashIcon color={Colors.destructive} size={16} />
+            </TouchableOpacity>
           </View>
         </View>
       </HoverableView>
@@ -323,7 +325,7 @@ function SideQuestCard({
     <View style={styles.cardWrapperNative}>
       <View style={styles.deleteReveal}>
         <Pressable onPress={onDelete} style={styles.deleteRevealBtn}>
-          <Feather name="trash-2" size={20} color="#fff" />
+          <TrashIcon color="#fff" size={20} />
         </Pressable>
       </View>
       <Animated.View
@@ -333,7 +335,7 @@ function SideQuestCard({
         <TouchableOpacity onPress={onTap} activeOpacity={0.8}>
           <View style={styles.cardRow}>
             <View style={styles.cardText}>
-              <ItemName>{sq.title}</ItemName>
+              <Text style={styles.sqName}>{sq.title}</Text>
               <ItemMeta>{`${sq.duration_minutes}m`}</ItemMeta>
             </View>
             {sq.link ? (
@@ -601,10 +603,42 @@ const styles = StyleSheet.create({
   // ── Card shared
   cardRow: { flexDirection: 'row', alignItems: 'center' },
   cardText: { flex: 1, marginRight: 8 },
-  cardRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sqName: { fontSize: 20, fontWeight: '400', color: Colors.taskName, marginBottom: 4 },
+  sqName: { fontSize: 16, fontWeight: '400', color: Colors.taskName },
   linkIconBtn: { padding: 4 },
-  trashWrap: { padding: 4 },
+
+  // ── Flat row (web, matches tasks golden standard)
+  sqRow: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.borderSubtle,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    backgroundColor: 'transparent',
+  },
+  sqRowTapArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  rightSlot: {
+    width: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  iconsRow: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   // ── Expanded header
   expandedHeader: {
@@ -614,7 +648,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // ── Web cards
+  // ── Web expanded card
   cardWeb: {
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.borderSubtle,
