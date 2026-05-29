@@ -103,16 +103,46 @@ function RouletteWorkMode() {
   const [extraMinutes, setExtraMinutes] = useState(0);
   const [now, setNow] = useState(Date.now());
 
+  // ── Inactivity check
+  const [showInactivityCheck, setShowInactivityCheck] = useState(false);
+  const [inactivityDismissedForCurrentRoll, setInactivityDismissedForCurrentRoll] = useState(false);
+  const [cappedActualMinutes, setCappedActualMinutes] = useState<number | null>(null);
+
   // ── Animation
   const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  // ── Current item (derived here so the tick effect below can reference it)
+  const activeSideQuestIds = new Set(seenSideQuestIds);
+  const remainingPool = pool.filter((p) => {
+    if (p.type === 'todo') return !doneTodoIds.has(p.item.id);
+    return !activeSideQuestIds.has(p.item.id);
+  });
+  const currentItem: PoolItem | undefined = remainingPool[currentIndex % Math.max(remainingPool.length, 1)];
 
   // ── Clock tick for progress bar and "break in X" display
   useEffect(() => {
     const id = setInterval(() => {
-      setNow(Date.now());
+      const ts = Date.now();
+      setNow(ts);
+
+      // Inactivity check — fires once per roll, not during breaks
+      if (
+        !inactivityDismissedForCurrentRoll &&
+        !isOnBreak &&
+        currentItem
+      ) {
+        const estimatedMs =
+          currentItem.type === 'todo'
+            ? (currentItem.item as Todo).estimated_minutes * 60000
+            : (currentItem.item as SideQuest).duration_minutes * 60000;
+        const thresholdMs = Math.max(estimatedMs * 2, 30 * 60000);
+        if (ts - currentItemStartTime >= thresholdMs) {
+          setShowInactivityCheck(true);
+        }
+      }
     }, 10000);
     return () => clearInterval(id);
-  }, []);
+  }, [inactivityDismissedForCurrentRoll, isOnBreak, currentItem, currentItemStartTime]);
 
   // ── Build pool on mount
   useEffect(() => {
@@ -141,6 +171,9 @@ function RouletteWorkMode() {
       const shuffled = fisherYates([...todoItems, ...sqItems]);
       setPool(shuffled);
       setCurrentItemStartTime(Date.now());
+      setInactivityDismissedForCurrentRoll(false);
+      setCappedActualMinutes(null);
+      setShowInactivityCheck(false);
     }
 
     void buildPool();
@@ -166,15 +199,6 @@ function RouletteWorkMode() {
       setIsSoftEnd(true);
     }
   }, [isOverTime, isSoftEnd, pool.length]);
-
-  // ── Current item
-  const activeSideQuestIds = new Set(seenSideQuestIds);
-  const remainingPool = pool.filter((p) => {
-    if (p.type === 'todo') return !doneTodoIds.has(p.item.id);
-    return !activeSideQuestIds.has(p.item.id);
-  });
-
-  const currentItem: PoolItem | undefined = remainingPool[currentIndex % Math.max(remainingPool.length, 1)];
 
   // ── Dynamic estimated end time (recalculates every tick + after each task)
   const remainingEstimatedMs = remainingPool.reduce((sum, p) => {
@@ -220,13 +244,16 @@ function RouletteWorkMode() {
     }
     setCurrentIndex(0); // always show first of remaining
     setCurrentItemStartTime(Date.now());
+    setInactivityDismissedForCurrentRoll(false);
+    setCappedActualMinutes(null);
+    setShowInactivityCheck(false);
   }
 
   // ── Done handler
   const handleDone = useCallback(() => {
     if (!currentItem) return;
 
-    const actualMinutes = (Date.now() - currentItemStartTime) / 60000;
+    const actualMinutes = cappedActualMinutes ?? (Date.now() - currentItemStartTime) / 60000;
     const estimated =
       currentItem.type === 'todo'
         ? (currentItem.item as Todo).estimated_minutes
@@ -259,13 +286,13 @@ function RouletteWorkMode() {
       checkBreakAndAdvance(pool, newDoneTodoIds, newSeenSqIds);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentItem, currentItemStartTime, completedRolls, doneTodoIds, seenSideQuestIds, pool]);
+  }, [currentItem, currentItemStartTime, cappedActualMinutes, completedRolls, doneTodoIds, seenSideQuestIds, pool]);
 
   // ── Skip handler
   const handleSkip = useCallback(() => {
     if (!currentItem) return;
 
-    const actualMinutes = (Date.now() - currentItemStartTime) / 60000;
+    const actualMinutes = cappedActualMinutes ?? (Date.now() - currentItemStartTime) / 60000;
     const estimated =
       currentItem.type === 'todo'
         ? (currentItem.item as Todo).estimated_minutes
@@ -303,7 +330,7 @@ function RouletteWorkMode() {
       checkBreakAndAdvance(pool, doneTodoIds, seenSideQuestIds);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentItem, currentItemStartTime, pool, doneTodoIds, seenSideQuestIds]);
+  }, [currentItem, currentItemStartTime, cappedActualMinutes, pool, doneTodoIds, seenSideQuestIds]);
 
   // ── Side Quest Now handler
   const handleSideQuestNow = useCallback(() => {
@@ -499,6 +526,37 @@ function RouletteWorkMode() {
               ))}
             </View>
             <PrimaryButton label="Finish session" onPress={handleFinishSession} />
+          </View>
+        </View>
+      )}
+
+      {/* ── Inactivity check overlay ─────────────────────────────────────── */}
+      {showInactivityCheck && (
+        <View style={styles.softEndOverlay}>
+          <View style={styles.softEndCard}>
+            <Text style={styles.softEndTitle}>Still there? 👋</Text>
+            <Text style={styles.softEndBody}>
+              You've been on this task for a while.
+            </Text>
+            <PrimaryButton
+              label="I was working"
+              onPress={() => {
+                setShowInactivityCheck(false);
+                setInactivityDismissedForCurrentRoll(true);
+              }}
+            />
+            <SecondaryButton
+              label="I got distracted"
+              onPress={() => {
+                const estimated =
+                  currentItem?.type === 'todo'
+                    ? (currentItem.item as Todo).estimated_minutes
+                    : (currentItem?.item as SideQuest | undefined)?.duration_minutes ?? 0;
+                setShowInactivityCheck(false);
+                setInactivityDismissedForCurrentRoll(true);
+                setCappedActualMinutes(estimated);
+              }}
+            />
           </View>
         </View>
       )}
