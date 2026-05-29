@@ -6,12 +6,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { router, Tabs } from 'expo-router';
 import { supabase } from '../../src/db/supabase';
-import { getTodosByUser } from '../../src/db/dao';
+import { getTodosByUser, insertTodo } from '../../src/db/dao';
 import {
   getSessionConfig,
   setSessionResult,
@@ -21,7 +22,9 @@ import {
 import type { Todo, SideQuest } from '../../src/types';
 import {
   Colors,
+  FontSize,
   PrimaryButton,
+  Radius,
   SecondaryButton,
 } from '../../src/components/ui';
 
@@ -107,6 +110,14 @@ function RouletteWorkMode() {
   const [showInactivityCheck, setShowInactivityCheck] = useState(false);
   const [inactivityDismissedForCurrentRoll, setInactivityDismissedForCurrentRoll] = useState(false);
   const [cappedActualMinutes, setCappedActualMinutes] = useState<number | null>(null);
+
+  // ── Note capture
+  const [showNoteCapture, setShowNoteCapture] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [pendingDoneData, setPendingDoneData] = useState<{
+    actualMinutes: number;
+    estimated: number;
+  } | null>(null);
 
   // ── Animation
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -249,7 +260,7 @@ function RouletteWorkMode() {
     setShowInactivityCheck(false);
   }
 
-  // ── Done handler
+  // ── Done handler — opens note capture; advance happens in handleNoteAdvance
   const handleDone = useCallback(() => {
     if (!currentItem) return;
 
@@ -259,13 +270,26 @@ function RouletteWorkMode() {
         ? (currentItem.item as Todo).estimated_minutes
         : (currentItem.item as SideQuest).duration_minutes;
 
+    setPendingDoneData({ actualMinutes, estimated });
+    setNoteText('');
+    setShowNoteCapture(true);
+  }, [currentItem, currentItemStartTime, cappedActualMinutes]);
+
+  // ── Note advance — completes the done flow after note is captured
+  function handleNoteAdvance(note: string | null) {
+    if (!currentItem || !pendingDoneData) return;
+
+    setShowNoteCapture(false);
+    setNoteText('');
+
     const roll: RollRecord = {
       item: currentItem.item,
       type: currentItem.type,
       outcome: 'done',
-      estimatedMinutes: estimated,
-      actualMinutes,
+      estimatedMinutes: pendingDoneData.estimated,
+      actualMinutes: pendingDoneData.actualMinutes,
       startedAt: currentItemStartTime,
+      note,
     };
 
     const newCompletedRolls = [...completedRolls, roll];
@@ -284,9 +308,19 @@ function RouletteWorkMode() {
 
     animateTransition(() => {
       checkBreakAndAdvance(pool, newDoneTodoIds, newSeenSqIds);
+      setPendingDoneData(null);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentItem, currentItemStartTime, cappedActualMinutes, completedRolls, doneTodoIds, seenSideQuestIds, pool]);
+  }
+
+  // ── Add as task — creates a todo from the note, then advances
+  async function handleAddAsTask() {
+    if (!noteText.trim()) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await insertTodo(user.id, noteText.trim(), 30, 'Must', null, null);
+    }
+    handleNoteAdvance(noteText.trim());
+  }
 
   // ── Skip handler
   const handleSkip = useCallback(() => {
@@ -489,15 +523,45 @@ function RouletteWorkMode() {
         {/* ── Action buttons ─────────────────────────────────────────────── */}
         {!isOnBreak && (
           <View style={styles.buttonsWrap}>
-            <PrimaryButton label="Done, next" onPress={handleDone} />
-            <SecondaryButton label="Skip" onPress={handleSkip} />
-            <TouchableOpacity
-              style={styles.ghostBtn}
-              onPress={handleSideQuestNow}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.ghostBtnText}>Side Quest now</Text>
-            </TouchableOpacity>
+            {showNoteCapture ? (
+              // ── Note capture mode
+              <>
+                <TextInput
+                  style={styles.noteInput}
+                  value={noteText}
+                  onChangeText={setNoteText}
+                  placeholder="Any thoughts? What happened?"
+                  placeholderTextColor={Colors.textDisabled}
+                  multiline
+                  autoFocus
+                  // @ts-ignore — web-only
+                  outlineWidth={0}
+                />
+                {noteText.trim().length > 0 && (
+                  <PrimaryButton
+                    label="Add as task + next"
+                    onPress={() => void handleAddAsTask()}
+                  />
+                )}
+                <SecondaryButton
+                  label={noteText.trim().length > 0 ? 'Save note + next' : 'Skip + next'}
+                  onPress={() => handleNoteAdvance(noteText.trim() || null)}
+                />
+              </>
+            ) : (
+              // ── Normal action buttons
+              <>
+                <PrimaryButton label="Done, next" onPress={handleDone} />
+                <SecondaryButton label="Skip" onPress={handleSkip} />
+                <TouchableOpacity
+                  style={styles.ghostBtn}
+                  onPress={handleSideQuestNow}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.ghostBtnText}>Side Quest now</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         )}
 
@@ -727,6 +791,18 @@ const styles = StyleSheet.create({
     borderColor: Colors.accent,
   },
   ghostBtnText: { color: Colors.accent, fontSize: 17, fontWeight: '600' },
+  noteInput: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.borderChip,
+    borderRadius: Radius.md,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: FontSize.body,
+    color: Colors.textPrimary,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
 
   // ── Footer
   footer: {
