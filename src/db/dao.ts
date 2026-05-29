@@ -2,7 +2,7 @@
 // No local SQLite layer on web (SharedArrayBuffer unavailable in browsers).
 // queueForSync is a no-op: writes are synchronous with the remote DB.
 import { supabase } from './supabase';
-import type { Todo, Bucket, SideQuest, Session, SessionRoll } from '../types';
+import type { Todo, Bucket, Area, Subgoal, SideQuest, Session, SessionRoll } from '../types';
 
 export async function getTodosByUser(userId: string): Promise<Todo[]> {
   const { data, error } = await supabase
@@ -43,7 +43,7 @@ export async function insertTodo(
 
 export async function updateTodo(
   id: string,
-  fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'bucket' | 'area_id' | 'notes' | 'completed_at'>>
+  fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'bucket' | 'area_id' | 'subgoal_id' | 'notes' | 'completed_at'>>
 ): Promise<void> {
   if (Object.keys(fields).length === 0) return;
   const { error } = await supabase.from('todos').update(fields).eq('id', id);
@@ -52,6 +52,103 @@ export async function updateTodo(
 
 export async function deleteTodo(id: string): Promise<void> {
   const { error } = await supabase.from('todos').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// --- Areas ---
+
+export async function getAreasByUser(userId: string): Promise<Area[]> {
+  const { data, error } = await supabase
+    .from('areas')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as Area[];
+}
+
+export async function insertArea(
+  userId: string,
+  name: string,
+  weeklyBudgetMinutes: number | null = null
+): Promise<Area> {
+  const { data, error } = await supabase
+    .from('areas')
+    .insert({ user_id: userId, name, weekly_budget_minutes: weeklyBudgetMinutes })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Area;
+}
+
+export async function updateArea(
+  id: string,
+  fields: Partial<Pick<Area, 'name' | 'weekly_budget_minutes'>>
+): Promise<void> {
+  if (Object.keys(fields).length === 0) return;
+  const { error } = await supabase.from('areas').update(fields).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteArea(id: string): Promise<void> {
+  const { error } = await supabase.from('areas').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// --- Subgoals ---
+
+export async function getSubgoalsByUser(userId: string): Promise<Subgoal[]> {
+  const { data, error } = await supabase
+    .from('subgoals')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as Subgoal[];
+}
+
+export async function getSubgoalsByArea(areaId: string): Promise<Subgoal[]> {
+  const { data, error } = await supabase
+    .from('subgoals')
+    .select('*')
+    .eq('area_id', areaId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as Subgoal[];
+}
+
+export async function insertSubgoal(
+  userId: string,
+  areaId: string,
+  name: string,
+  hashtag: string,
+  weeklyBudgetMinutes: number | null = null
+): Promise<Subgoal> {
+  const { data, error } = await supabase
+    .from('subgoals')
+    .insert({ user_id: userId, area_id: areaId, name, hashtag, weekly_budget_minutes: weeklyBudgetMinutes })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Subgoal;
+}
+
+export async function updateSubgoal(
+  id: string,
+  fields: Partial<Pick<Subgoal, 'name' | 'hashtag' | 'weekly_budget_minutes'>>
+): Promise<void> {
+  if (Object.keys(fields).length === 0) return;
+  const { error } = await supabase.from('subgoals').update(fields).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteSubgoal(id: string): Promise<void> {
+  const { error } = await supabase.from('subgoals').delete().eq('id', id);
   if (error) throw error;
 }
 

@@ -23,6 +23,7 @@ export function initDb(): void {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       user_id TEXT NOT NULL,
+      subgoal_id TEXT,
       completed_at TEXT,
       synced_at TEXT
     );
@@ -35,6 +36,18 @@ export function initDb(): void {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       user_id TEXT NOT NULL,
+      synced_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS subgoals (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      area_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      hashtag TEXT NOT NULL,
+      weekly_budget_minutes INTEGER,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
       synced_at TEXT
     );
 
@@ -113,4 +126,5 @@ export function initDb(): void {
 
   // Idempotent column additions for existing installs (SQLite has no IF NOT EXISTS on ALTER TABLE).
   try { database.execSync(`ALTER TABLE todos ADD COLUMN completed_at TEXT;`); } catch { /* column already exists */ }
+  try { database.execSync(`ALTER TABLE todos ADD COLUMN subgoal_id TEXT;`); } catch { /* column already exists */ }
 }

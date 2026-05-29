@@ -40,6 +40,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      subgoals: {
+        Row: {
+          id: string;
+          user_id: string;
+          area_id: string;
+          name: string;
+          hashtag: string;
+          weekly_budget_minutes: number | null;
+          created_at: string;
+          updated_at: string;
+          synced_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          area_id: string;
+          name: string;
+          hashtag: string;
+          weekly_budget_minutes?: number | null;
+        };
+        Update: {
+          name?: string;
+          hashtag?: string;
+          weekly_budget_minutes?: number | null;
+        };
+        Relationships: [];
+      };
       todos: {
         Row: {
           id: string;
@@ -52,6 +79,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           completed_at: string | null;
+          subgoal_id: string | null;
           synced_at: string | null;
         };
         Insert: {
@@ -61,6 +89,7 @@ export type Database = {
           estimated_minutes?: number;
           bucket: 'Must' | 'Want' | 'Later';
           area_id?: string | null;
+          subgoal_id?: string | null;
           notes?: string | null;
         };
         Update: {
@@ -68,6 +97,7 @@ export type Database = {
           estimated_minutes?: number;
           bucket?: 'Must' | 'Want' | 'Later';
           area_id?: string | null;
+          subgoal_id?: string | null;
           notes?: string | null;
           completed_at?: string | null;
         };

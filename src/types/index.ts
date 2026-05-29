@@ -6,11 +6,24 @@ export interface Todo {
   estimated_minutes: number;
   bucket: Bucket;
   area_id: string | null;
+  subgoal_id: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
   user_id: string;
   completed_at: string | null;
+  synced_at: string | null;
+}
+
+export interface Subgoal {
+  id: string;
+  user_id: string;
+  area_id: string;
+  name: string;
+  hashtag: string;
+  weekly_budget_minutes: number | null;
+  created_at: string;
+  updated_at: string;
   synced_at: string | null;
 }
 

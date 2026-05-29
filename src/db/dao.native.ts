@@ -51,6 +51,7 @@ export async function insertTodo(
     estimated_minutes: estimatedMinutes,
     bucket,
     area_id: areaId,
+    subgoal_id: null,
     notes,
     created_at: now,
     updated_at: now,
@@ -62,7 +63,7 @@ export async function insertTodo(
 
 export async function updateTodo(
   id: string,
-  fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'bucket' | 'area_id' | 'notes' | 'completed_at'>>
+  fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'bucket' | 'area_id' | 'subgoal_id' | 'notes' | 'completed_at'>>
 ): Promise<void> {
   const db = getDb();
   const now = new Date().toISOString();
@@ -73,6 +74,7 @@ export async function updateTodo(
   if (fields.estimated_minutes !== undefined) { sets.push('estimated_minutes = ?'); values.push(fields.estimated_minutes); }
   if (fields.bucket !== undefined) { sets.push('bucket = ?'); values.push(fields.bucket); }
   if (fields.area_id !== undefined) { sets.push('area_id = ?'); values.push(fields.area_id); }
+  if (fields.subgoal_id !== undefined) { sets.push('subgoal_id = ?'); values.push(fields.subgoal_id); }
   if (fields.notes !== undefined) { sets.push('notes = ?'); values.push(fields.notes); }
   if (fields.completed_at !== undefined) { sets.push('completed_at = ?'); values.push(fields.completed_at); }
 
