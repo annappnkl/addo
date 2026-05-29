@@ -55,6 +55,7 @@ Features 1–9 drafted previously but being re-planned under the calendar-driven
    - **Icon order in task row:** checkmark · chevron-left · chevron-right · trash (left to right). Checkmark in Accent colour to signal it's a positive action, not a delete.
    - **No undo prompt.** Completing a task is not destructive — the data is kept. If the user wants it back in the pool, that's a future edge case — ignore for now.
    - **Schema change:** `todos` needs a nullable `completed_at TIMESTAMPTZ` column. Migration required.
+   - **TODO (design):** replace the `check-circle` Feather icon with a custom asset. Anna doesn't like the current icon. Parked until a replacement is chosen.
 
 2. **Session Setup** — ✅ LOCKED.
    - **Mode A (auto):** If user is currently inside a calendar event mapped to an Area, ADDo opens to "You're in [Area] until [time]. Start roulette?" One tap. Session length = remaining block time (no 3h cap). Never auto-starts — always a tap.
