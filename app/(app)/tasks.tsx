@@ -125,6 +125,7 @@ function TaskCard({
   isExpanded,
   draft,
   onTap,
+  onComplete,
   onDelete,
   onDraftChange,
   isHovered,
@@ -138,6 +139,7 @@ function TaskCard({
   isExpanded: boolean;
   draft: EditDraft;
   onTap: () => void;
+  onComplete: () => void;
   onDelete: () => void;
   onDraftChange: (d: EditDraft) => void;
   isHovered: boolean;
@@ -173,6 +175,12 @@ function TaskCard({
         <ItemMeta>{formatMinutes(todo.estimated_minutes)}</ItemMeta>
       </View>
       <View style={[styles.iconsRow, { opacity: showIcons ? 1 : 0 }]}>
+        <TouchableOpacity
+          onPress={onComplete}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Feather name="check-circle" size={20} color={Colors.accent} />
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={() => onMoveBucket('left')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -287,6 +295,7 @@ function BucketSection({
   isWide,
   hideHeader,
   onToggle,
+  onComplete,
   onDelete,
   onDraftChange,
   hoveredTaskId,
@@ -303,6 +312,7 @@ function BucketSection({
   isWide: boolean;
   hideHeader?: boolean;
   onToggle: (todo: Todo) => void;
+  onComplete: (id: string) => void;
   onDelete: (id: string) => void;
   onDraftChange: (d: EditDraft) => void;
   hoveredTaskId: string | null;
@@ -333,6 +343,7 @@ function BucketSection({
             isExpanded={expandedId === todo.id}
             draft={draft}
             onTap={() => onToggle(todo)}
+            onComplete={() => onComplete(todo.id)}
             onDelete={() => onDelete(todo.id)}
             onDraftChange={onDraftChange}
             isHovered={hoveredTaskId === todo.id}
@@ -410,6 +421,13 @@ export default function TasksScreen() {
     setAdding(false);
   }
 
+  async function handleComplete(id: string) {
+    if (expandedId === id) setExpandedId(null);
+    if (selectedTaskId === id) setSelectedTaskId(null);
+    await updateTodo(id, { completed_at: new Date().toISOString() });
+    if (userId) await loadTodos(userId);
+  }
+
   async function handleDelete(id: string) {
     if (expandedId === id) setExpandedId(null);
     if (selectedTaskId === id) setSelectedTaskId(null);
@@ -467,6 +485,7 @@ export default function TasksScreen() {
     expandedId,
     draft,
     onToggle: handleToggle,
+    onComplete: handleComplete,
     onDelete: handleDelete,
     onDraftChange: setDraft,
     hoveredTaskId,

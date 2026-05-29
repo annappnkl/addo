@@ -51,6 +51,7 @@ export type Database = {
           notes: string | null;
           created_at: string;
           updated_at: string;
+          completed_at: string | null;
           synced_at: string | null;
         };
         Insert: {
@@ -68,6 +69,7 @@ export type Database = {
           bucket?: 'Must' | 'Want' | 'Later';
           area_id?: string | null;
           notes?: string | null;
+          completed_at?: string | null;
         };
         Relationships: [];
       };
