@@ -9,6 +9,7 @@ export async function getTodosByUser(userId: string): Promise<Todo[]> {
     .from('todos')
     .select('*')
     .eq('user_id', userId)
+    .is('completed_at', null)
     .order('created_at', { ascending: true });
 
   if (error) throw error;
@@ -42,7 +43,7 @@ export async function insertTodo(
 
 export async function updateTodo(
   id: string,
-  fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'bucket' | 'area_id' | 'notes'>>
+  fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'bucket' | 'area_id' | 'notes' | 'completed_at'>>
 ): Promise<void> {
   if (Object.keys(fields).length === 0) return;
   const { error } = await supabase.from('todos').update(fields).eq('id', id);

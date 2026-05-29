@@ -10,6 +10,7 @@ export interface Todo {
   created_at: string;
   updated_at: string;
   user_id: string;
+  completed_at: string | null;
   synced_at: string | null;
 }
 

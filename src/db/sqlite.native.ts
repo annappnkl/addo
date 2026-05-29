@@ -23,6 +23,7 @@ export function initDb(): void {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       user_id TEXT NOT NULL,
+      completed_at TEXT,
       synced_at TEXT
     );
 
@@ -109,4 +110,7 @@ export function initDb(): void {
       queued_at TEXT NOT NULL
     );
   `);
+
+  // Idempotent column additions for existing installs (SQLite has no IF NOT EXISTS on ALTER TABLE).
+  try { database.execSync(`ALTER TABLE todos ADD COLUMN completed_at TEXT;`); } catch { /* column already exists */ }
 }

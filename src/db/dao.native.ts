@@ -20,7 +20,7 @@ function queueForSync(
 export async function getTodosByUser(userId: string): Promise<Todo[]> {
   const db = getDb();
   return db.getAllSync<Todo>(
-    `SELECT * FROM todos WHERE user_id = ? ORDER BY created_at ASC`,
+    `SELECT * FROM todos WHERE user_id = ? AND completed_at IS NULL ORDER BY created_at ASC`,
     [userId]
   );
 }
@@ -55,13 +55,14 @@ export async function insertTodo(
     created_at: now,
     updated_at: now,
     user_id: userId,
+    completed_at: null,
     synced_at: null,
   };
 }
 
 export async function updateTodo(
   id: string,
-  fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'bucket' | 'area_id' | 'notes'>>
+  fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'bucket' | 'area_id' | 'notes' | 'completed_at'>>
 ): Promise<void> {
   const db = getDb();
   const now = new Date().toISOString();
@@ -73,6 +74,7 @@ export async function updateTodo(
   if (fields.bucket !== undefined) { sets.push('bucket = ?'); values.push(fields.bucket); }
   if (fields.area_id !== undefined) { sets.push('area_id = ?'); values.push(fields.area_id); }
   if (fields.notes !== undefined) { sets.push('notes = ?'); values.push(fields.notes); }
+  if (fields.completed_at !== undefined) { sets.push('completed_at = ?'); values.push(fields.completed_at); }
 
   if (sets.length === 0) return;
 
