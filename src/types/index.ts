@@ -56,6 +56,7 @@ export interface SessionRoll {
   outcome: 'done' | 'skipped' | 'side_quest';
   actual_minutes: number | null;
   rolled_at: string;
+  note: string | null;
   user_id: string;
   synced_at: string | null;
 }

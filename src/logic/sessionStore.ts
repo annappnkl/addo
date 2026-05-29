@@ -15,6 +15,7 @@ export interface RollRecord {
   estimatedMinutes: number;
   actualMinutes: number;
   startedAt: number;
+  note?: string | null;
 }
 
 export interface SessionResult {

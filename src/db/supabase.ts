@@ -137,6 +137,7 @@ export type Database = {
           outcome: 'done' | 'skipped' | 'side_quest';
           actual_minutes: number | null;
           rolled_at: string;
+          note: string | null;
           synced_at: string | null;
         };
         Insert: {
@@ -148,10 +149,12 @@ export type Database = {
           outcome: 'done' | 'skipped' | 'side_quest';
           actual_minutes?: number | null;
           rolled_at?: string;
+          note?: string | null;
         };
         Update: {
           outcome?: 'done' | 'skipped' | 'side_quest';
           actual_minutes?: number | null;
+          note?: string | null;
         };
         Relationships: [];
       };

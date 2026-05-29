@@ -147,6 +147,7 @@ export async function insertSessionRoll(
       outcome: r.outcome,
       actual_minutes: r.actual_minutes,
       rolled_at: r.rolled_at,
+      note: r.note ?? null,
     })
     .select()
     .single();
