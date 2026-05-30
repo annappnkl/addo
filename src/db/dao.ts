@@ -2,7 +2,7 @@
 // No local SQLite layer on web (SharedArrayBuffer unavailable in browsers).
 // queueForSync is a no-op: writes are synchronous with the remote DB.
 import { supabase } from './supabase';
-import type { Todo, Bucket, Area, Subgoal, SideQuest, Session, SessionRoll } from '../types';
+import type { Todo, Bucket, Area, Subgoal, SideQuest, Session, SessionRoll, Settings } from '../types';
 
 export async function getTodosByUser(userId: string): Promise<Todo[]> {
   const { data, error } = await supabase
@@ -268,4 +268,26 @@ export async function getSessionsByUser(
 
   if (error) throw error;
   return (data ?? []) as Session[];
+}
+
+// --- Settings ---
+
+export async function getSettings(userId: string): Promise<Settings | null> {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data as Settings | null;
+}
+
+export async function upsertSettings(
+  userId: string,
+  fields: Partial<Pick<Settings, 'break_interval_minutes' | 'side_quest_ratio'>>
+): Promise<void> {
+  const { error } = await supabase
+    .from('settings')
+    .upsert({ user_id: userId, ...fields }, { onConflict: 'user_id' });
+  if (error) throw error;
 }
