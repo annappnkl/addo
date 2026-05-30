@@ -15,9 +15,9 @@ import {
 import { Feather } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../../src/db/supabase';
-import { getTodosByUser, insertTodo, deleteTodo, updateTodo } from '../../src/db/dao';
+import { getTodosByUser, insertTodo, deleteTodo, updateTodo, getAreasByUser, getSubgoalsByUser } from '../../src/db/dao';
 import { bucketTotalMinutes, formatMinutes, moveBucketCircular, splitByDuration } from '../../src/logic/todos';
-import type { Bucket, Todo } from '../../src/types';
+import type { Area, Bucket, Subgoal, Todo } from '../../src/types';
 import {
   Colors,
   Chip,
@@ -366,6 +366,10 @@ export default function TasksScreen() {
 
   const [todos, setTodos] = useState<Todo[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [subgoals, setSubgoals] = useState<Subgoal[]>([]);
+  const [filterAreaId, setFilterAreaId] = useState<string | null>(null);
+  const [filterSubgoalId, setFilterSubgoalId] = useState<string | null>(null);
 
   // Add form
   const [title, setTitle] = useState('');
@@ -391,10 +395,21 @@ export default function TasksScreen() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setUserId(user.id);
-        void loadTodos(user.id);
+        void loadAll(user.id);
       }
     });
   }, []);
+
+  async function loadAll(uid: string) {
+    const [loadedTodos, loadedAreas, loadedSubgoals] = await Promise.all([
+      getTodosByUser(uid),
+      getAreasByUser(uid),
+      getSubgoalsByUser(uid),
+    ]);
+    setTodos(loadedTodos);
+    setAreas(loadedAreas);
+    setSubgoals(loadedSubgoals);
+  }
 
   async function loadTodos(uid: string) {
     setTodos(await getTodosByUser(uid));
@@ -479,9 +494,15 @@ export default function TasksScreen() {
     if (userId) await loadTodos(userId);
   }
 
+  const filteredTodos = todos.filter((t) => {
+    if (filterSubgoalId) return t.subgoal_id === filterSubgoalId;
+    if (filterAreaId) return t.area_id === filterAreaId;
+    return true;
+  });
+
   // Shared BucketSection props
   const sharedSectionProps = {
-    todos,
+    todos: filteredTodos,
     expandedId,
     draft,
     onToggle: handleToggle,
@@ -586,6 +607,50 @@ export default function TasksScreen() {
           </View>
         </View>
 
+        {/* ── Area / Subgoal filter chips ────────────────────────────────── */}
+        {areas.length > 0 && (
+          <View style={styles.filterSection}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterRow}>
+              <Chip
+                label="All"
+                selected={filterAreaId === null}
+                onPress={() => { setFilterAreaId(null); setFilterSubgoalId(null); }}
+              />
+              {areas.map((area) => (
+                <Chip
+                  key={area.id}
+                  label={area.name}
+                  selected={filterAreaId === area.id}
+                  onPress={() => {
+                    setFilterAreaId(area.id);
+                    setFilterSubgoalId(null);
+                  }}
+                />
+              ))}
+            </ScrollView>
+
+            {filterAreaId && subgoals.filter((s) => s.area_id === filterAreaId).length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterRow}>
+                <Chip
+                  label={`All ${areas.find((a) => a.id === filterAreaId)?.name ?? ''}`}
+                  selected={filterSubgoalId === null}
+                  onPress={() => setFilterSubgoalId(null)}
+                />
+                {subgoals.filter((s) => s.area_id === filterAreaId).map((sg) => (
+                  <Chip
+                    key={sg.id}
+                    label={sg.hashtag}
+                    selected={filterSubgoalId === sg.id}
+                    onPress={() => setFilterSubgoalId(sg.id)}
+                  />
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        )}
+
         {/* ── Wide: classic divider → three columns ─────────────────────── */}
         {isWide && (
           <>
@@ -617,7 +682,7 @@ export default function TasksScreen() {
                     {bucket}
                   </Text>
                   <Text style={[styles.tabTotal, activeBucket === bucket && styles.tabTotalActive]}>
-                    {formatMinutes(bucketTotalMinutes(todos, bucket))}
+                    {formatMinutes(bucketTotalMinutes(filteredTodos, bucket))}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -717,6 +782,10 @@ const styles = StyleSheet.create({
   },
   pillsScroll: { flexGrow: 0 },
   pillsRow: { flexDirection: 'row', gap: 8 },
+
+  // ── Area / Subgoal filter
+  filterSection: { paddingHorizontal: 20, paddingTop: 12, gap: 8, marginBottom: 8 },
+  filterRow: { flexDirection: 'row', gap: 8 },
 
   // ── Wide three-column layout
   bucketsContainer: { paddingHorizontal: 80, paddingTop: 0 },
