@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
+import { useFocusEffect } from 'expo-router';
 import { supabase } from '../../src/db/supabase';
 import { getTodosByUser, insertTodo, deleteTodo, updateTodo, getAreasByUser, getSubgoalsByUser } from '../../src/db/dao';
 import { bucketTotalMinutes, formatMinutes, moveBucketCircular, splitByDuration } from '../../src/logic/todos';
@@ -116,16 +117,12 @@ function EditForm({
       </ScrollView>
 
       {areas.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.pillsScroll}
-          contentContainerStyle={styles.pillsRow}
-        >
+        <View style={styles.editChipsWrap}>
           <Chip
             label="No area"
             selected={draft.areaId === null}
             onPress={() => onChange({ ...draft, areaId: null, subgoalId: null })}
+            size="sm"
           />
           {areas.map((area) => (
             <Chip
@@ -133,27 +130,24 @@ function EditForm({
               label={area.name}
               selected={draft.areaId === area.id}
               onPress={() => onChange({ ...draft, areaId: area.id, subgoalId: null })}
+              size="sm"
             />
           ))}
-        </ScrollView>
+        </View>
       )}
 
       {draft.areaId && subgoals.filter((s) => s.area_id === draft.areaId).length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.pillsScroll}
-          contentContainerStyle={styles.pillsRow}
-        >
+        <View style={styles.editChipsWrap}>
           {subgoals.filter((s) => s.area_id === draft.areaId).map((sg) => (
             <Chip
               key={sg.id}
               label={sg.hashtag}
               selected={draft.subgoalId === sg.id}
               onPress={() => onChange({ ...draft, subgoalId: draft.subgoalId === sg.id ? null : sg.id })}
+              size="sm"
             />
           ))}
-        </ScrollView>
+        </View>
       )}
 
       <FieldInput
@@ -166,6 +160,16 @@ function EditForm({
       />
     </View>
   );
+}
+
+// ─── TaskMeta — area + subgoal subtitle shown in collapsed row ────────────────
+function TaskMeta({ todo, areas, subgoals }: { todo: Todo; areas: Area[]; subgoals: Subgoal[] }) {
+  if (!todo.area_id) return null;
+  const area = areas.find((a) => a.id === todo.area_id);
+  if (!area) return null;
+  const sg = todo.subgoal_id ? subgoals.find((s) => s.id === todo.subgoal_id) : null;
+  const label = sg ? `${area.name} · ${sg.hashtag}` : area.name;
+  return <Text style={styles.taskMeta}>{label}</Text>;
 }
 
 // ─── TaskCard ─────────────────────────────────────────────────────────────────
@@ -298,6 +302,7 @@ function TaskCard({
       >
         <TouchableOpacity onPress={onTap} style={styles.taskRowTapArea} activeOpacity={0.8}>
           <Text style={styles.taskName}>{todo.title}</Text>
+          <TaskMeta todo={todo} areas={areas} subgoals={subgoals} />
         </TouchableOpacity>
         {rightSlot}
       </HoverableView>
@@ -337,6 +342,7 @@ function TaskCard({
     <View style={rowStyle}>
       <TouchableOpacity onPress={onSelect} style={styles.taskRowTapArea} activeOpacity={0.8}>
         <Text style={styles.taskName}>{todo.title}</Text>
+        <TaskMeta todo={todo} areas={areas} subgoals={subgoals} />
       </TouchableOpacity>
       {rightSlot}
     </View>
@@ -472,6 +478,13 @@ export default function TasksScreen() {
       }
     });
   }, []);
+
+  // Reload areas + subgoals when returning from the Areas screen
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) void loadAll(userId);
+    }, [userId])
+  );
 
   async function loadAll(uid: string) {
     const [loadedTodos, loadedAreas, loadedSubgoals] = await Promise.all([
@@ -971,12 +984,13 @@ const styles = StyleSheet.create({
   // Tap area: fills full row height so entire row is clickable
   taskRowTapArea: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    justifyContent: 'center',
     paddingTop: 20,
     paddingBottom: 20,
   },
-  taskName: { flex: 1, fontSize: 16, fontWeight: '400', color: Colors.taskName },
+  taskName: { fontSize: 16, fontWeight: '400', color: Colors.taskName },
+  taskMeta: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   taskNameInput: {
     flex: 1,
     fontSize: 16,
@@ -1012,5 +1026,6 @@ const styles = StyleSheet.create({
 
   // ── Edit form (expands within the row)
   editForm: { gap: 10, width: '100%', paddingTop: 4, paddingBottom: 20 },
+  editChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   editNotesInput: { minHeight: 72, textAlignVertical: 'top' },
 });

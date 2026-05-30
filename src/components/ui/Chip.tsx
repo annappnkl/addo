@@ -6,16 +6,19 @@ interface ChipProps {
   selected: boolean;
   onPress: () => void;
   variant?: 'standard' | 'fixed';
+  size?: 'md' | 'sm';
   disabled?: boolean;
 }
 
-export function Chip({ label, selected, onPress, variant = 'standard', disabled }: ChipProps) {
+export function Chip({ label, selected, onPress, variant = 'standard', size = 'md', disabled }: ChipProps) {
   const isFixed = variant === 'fixed';
+  const isSm = size === 'sm';
   return (
     <TouchableOpacity
       style={[
         styles.base,
         isFixed && styles.fixed,
+        isSm && styles.sm,
         selected ? styles.selected : styles.unselected,
         disabled && styles.disabled,
       ]}
@@ -23,7 +26,7 @@ export function Chip({ label, selected, onPress, variant = 'standard', disabled 
       activeOpacity={0.7}
       disabled={disabled}
     >
-      <Text style={[styles.text, selected ? styles.textSelected : styles.textUnselected]}>
+      <Text style={[styles.text, isSm && styles.textSm, selected ? styles.textSelected : styles.textUnselected]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -56,9 +59,17 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.4,
   },
+  sm: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
   text: {
     fontSize: FontSize.label,
     fontWeight: FontWeight.medium,
+  },
+  textSm: {
+    fontSize: 12,
+    fontWeight: FontWeight.regular,
   },
   textUnselected: {
     color: Colors.textOn,
