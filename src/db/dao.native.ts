@@ -31,6 +31,7 @@ export async function insertTodo(
   estimatedMinutes: number,
   bucket: Bucket,
   areaId: string | null = null,
+  subgoalId: string | null = null,
   notes: string | null = null
 ): Promise<Todo> {
   const db = getDb();
@@ -38,9 +39,9 @@ export async function insertTodo(
   const id = Crypto.randomUUID();
 
   db.runSync(
-    `INSERT INTO todos (id, title, estimated_minutes, bucket, area_id, notes, created_at, updated_at, user_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, title, estimatedMinutes, bucket, areaId, notes, now, now, userId]
+    `INSERT INTO todos (id, title, estimated_minutes, bucket, area_id, subgoal_id, notes, created_at, updated_at, user_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, title, estimatedMinutes, bucket, areaId, subgoalId, notes, now, now, userId]
   );
 
   queueForSync('todos', id, 'insert');
@@ -51,7 +52,7 @@ export async function insertTodo(
     estimated_minutes: estimatedMinutes,
     bucket,
     area_id: areaId,
-    subgoal_id: null,
+    subgoal_id: subgoalId,
     notes,
     created_at: now,
     updated_at: now,

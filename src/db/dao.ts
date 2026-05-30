@@ -22,6 +22,7 @@ export async function insertTodo(
   estimatedMinutes: number,
   bucket: Bucket,
   areaId: string | null = null,
+  subgoalId: string | null = null,
   notes: string | null = null
 ): Promise<Todo> {
   const { data, error } = await supabase
@@ -32,6 +33,7 @@ export async function insertTodo(
       estimated_minutes: estimatedMinutes,
       bucket,
       area_id: areaId,
+      subgoal_id: subgoalId,
       notes,
     })
     .select()

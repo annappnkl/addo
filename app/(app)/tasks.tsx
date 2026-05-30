@@ -66,6 +66,8 @@ interface EditDraft {
   duration: DurationOption | null;
   bucket: Bucket;
   notes: string;
+  areaId: string | null;
+  subgoalId: string | null;
 }
 
 function draftFromTodo(todo: Todo): EditDraft {
@@ -77,6 +79,8 @@ function draftFromTodo(todo: Todo): EditDraft {
     duration: matched,
     bucket: todo.bucket,
     notes: todo.notes ?? '',
+    areaId: todo.area_id,
+    subgoalId: todo.subgoal_id,
   };
 }
 
@@ -84,9 +88,13 @@ function draftFromTodo(todo: Todo): EditDraft {
 function EditForm({
   draft,
   onChange,
+  areas,
+  subgoals,
 }: {
   draft: EditDraft;
   onChange: (d: EditDraft) => void;
+  areas: Area[];
+  subgoals: Subgoal[];
 }) {
   return (
     <View style={styles.editForm}>
@@ -106,6 +114,47 @@ function EditForm({
           />
         ))}
       </ScrollView>
+
+      {areas.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.pillsScroll}
+          contentContainerStyle={styles.pillsRow}
+        >
+          <Chip
+            label="No area"
+            selected={draft.areaId === null}
+            onPress={() => onChange({ ...draft, areaId: null, subgoalId: null })}
+          />
+          {areas.map((area) => (
+            <Chip
+              key={area.id}
+              label={area.name}
+              selected={draft.areaId === area.id}
+              onPress={() => onChange({ ...draft, areaId: area.id, subgoalId: null })}
+            />
+          ))}
+        </ScrollView>
+      )}
+
+      {draft.areaId && subgoals.filter((s) => s.area_id === draft.areaId).length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.pillsScroll}
+          contentContainerStyle={styles.pillsRow}
+        >
+          {subgoals.filter((s) => s.area_id === draft.areaId).map((sg) => (
+            <Chip
+              key={sg.id}
+              label={sg.hashtag}
+              selected={draft.subgoalId === sg.id}
+              onPress={() => onChange({ ...draft, subgoalId: draft.subgoalId === sg.id ? null : sg.id })}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       <FieldInput
         value={draft.notes}
@@ -134,6 +183,8 @@ function TaskCard({
   onHoverOut,
   onSelect,
   onMoveBucket,
+  areas,
+  subgoals,
 }: {
   todo: Todo;
   isExpanded: boolean;
@@ -148,6 +199,8 @@ function TaskCard({
   onHoverOut: () => void;
   onSelect: () => void;
   onMoveBucket: (direction: 'left' | 'right') => void;
+  areas: Area[];
+  subgoals: Subgoal[];
 }) {
   const showIcons = (isHovered || isSelected) && !isExpanded;
   const titleInputRef = useRef<TextInput>(null);
@@ -230,6 +283,8 @@ function TaskCard({
           <EditForm
             draft={draft}
             onChange={onDraftChange}
+            areas={areas}
+            subgoals={subgoals}
           />
         </Pressable>
       );
@@ -271,6 +326,8 @@ function TaskCard({
         <EditForm
           draft={draft}
           onChange={onDraftChange}
+          areas={areas}
+          subgoals={subgoals}
         />
       </Pressable>
     );
@@ -304,6 +361,8 @@ function BucketSection({
   onHoverOut,
   onSelect,
   onMoveBucket,
+  areas,
+  subgoals,
 }: {
   bucket: Bucket;
   todos: Todo[];
@@ -321,6 +380,8 @@ function BucketSection({
   onHoverOut: () => void;
   onSelect: (id: string) => void;
   onMoveBucket: (id: string, direction: 'left' | 'right') => void;
+  areas: Area[];
+  subgoals: Subgoal[];
 }) {
   const bucketTodos = todos.filter((t) => t.bucket === bucket);
 
@@ -352,6 +413,8 @@ function BucketSection({
             onHoverOut={onHoverOut}
             onSelect={() => onSelect(todo.id)}
             onMoveBucket={(dir) => onMoveBucket(todo.id, dir)}
+            areas={areas}
+            subgoals={subgoals}
           />
         ))
       )}
@@ -379,9 +442,19 @@ export default function TasksScreen() {
   const [selectedBucket, setSelectedBucket] = useState<Bucket>('Must');
   const [adding, setAdding] = useState(false);
 
+  // Add form — area/subgoal tagging
+  const [addAreaId, setAddAreaId] = useState<string | null>(null);
+  const [addSubgoalId, setAddSubgoalId] = useState<string | null>(null);
+
+  // Sync add form area/subgoal with active filter
+  useEffect(() => {
+    setAddAreaId(filterAreaId);
+    setAddSubgoalId(filterSubgoalId);
+  }, [filterAreaId, filterSubgoalId]);
+
   // Inline edit
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<EditDraft>({ title: '', duration: null, bucket: 'Must', notes: '' });
+  const [draft, setDraft] = useState<EditDraft>({ title: '', duration: null, bucket: 'Must', notes: '', areaId: null, subgoalId: null });
   // Hover/selection state for chevron + delete icons
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -422,16 +495,19 @@ export default function TasksScreen() {
     if (minutes > 0) {
       const tasks = splitByDuration(title.trim(), selectedBucket, minutes);
       for (const t of tasks) {
-        await insertTodo(userId, t.title, t.durationMinutes, t.bucket);
+        await insertTodo(userId, t.title, t.durationMinutes, t.bucket, addAreaId, addSubgoalId);
       }
     } else {
-      await insertTodo(userId, title.trim(), 0, selectedBucket);
+      await insertTodo(userId, title.trim(), 0, selectedBucket, addAreaId, addSubgoalId);
     }
     setTitle('');
     setSelectedDuration(null);
     setShowCustomDuration(false);
     setCustomDurationInput('');
     // intentionally not resetting selectedBucket — user stays on their chosen bucket
+    // reset area/subgoal to active filter values (not null — user likely adding more to same area)
+    setAddAreaId(filterAreaId);
+    setAddSubgoalId(filterSubgoalId);
     await loadTodos(userId);
     setAdding(false);
   }
@@ -483,9 +559,11 @@ export default function TasksScreen() {
 
   async function saveDraft(id: string, draftToSave: EditDraft) {
     if (!id || !draftToSave.title.trim()) return;
-    const fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'notes'>> = {
+    const fields: Partial<Pick<Todo, 'title' | 'estimated_minutes' | 'notes' | 'area_id' | 'subgoal_id'>> = {
       title: draftToSave.title.trim(),
       notes: draftToSave.notes.trim() || null,
+      area_id: draftToSave.areaId,
+      subgoal_id: draftToSave.subgoalId,
     };
     if (draftToSave.duration !== null) {
       fields.estimated_minutes = draftToSave.duration;
@@ -515,6 +593,8 @@ export default function TasksScreen() {
     onHoverOut: () => setHoveredTaskId(null),
     onSelect: handleSelect,
     onMoveBucket: handleMoveBucket,
+    areas,
+    subgoals,
   };
 
   return (
@@ -605,6 +685,39 @@ export default function TasksScreen() {
               )}
             </View>
           </View>
+
+          {/* Area tagging for add form — only when areas exist */}
+          {areas.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipsGroup}>
+              <Chip
+                label="No area"
+                selected={addAreaId === null}
+                onPress={() => { setAddAreaId(null); setAddSubgoalId(null); }}
+              />
+              {areas.map((area) => (
+                <Chip
+                  key={area.id}
+                  label={area.name}
+                  selected={addAreaId === area.id}
+                  onPress={() => { setAddAreaId(area.id); setAddSubgoalId(null); }}
+                />
+              ))}
+            </ScrollView>
+          )}
+          {addAreaId && subgoals.filter((s) => s.area_id === addAreaId).length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipsGroup}>
+              {subgoals.filter((s) => s.area_id === addAreaId).map((sg) => (
+                <Chip
+                  key={sg.id}
+                  label={sg.hashtag}
+                  selected={addSubgoalId === sg.id}
+                  onPress={() => setAddSubgoalId(addSubgoalId === sg.id ? null : sg.id)}
+                />
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         {/* ── Area / Subgoal filter chips ────────────────────────────────── */}
