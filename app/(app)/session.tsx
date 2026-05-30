@@ -12,7 +12,7 @@ import {
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { supabase } from '../../src/db/supabase';
-import { getTodosByUser } from '../../src/db/dao';
+import { getTodosByUser, getSettings } from '../../src/db/dao';
 import { formatMinutes } from '../../src/logic/todos';
 import { setSessionConfig } from '../../src/logic/sessionStore';
 import type { Bucket, SideQuest, Todo } from '../../src/types';
@@ -291,8 +291,13 @@ export default function SessionScreen() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUserId(user.id);
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      setUserId(user.id);
+      const settings = await getSettings(user.id);
+      if (settings) {
+        setIntervalMinutes(settings.break_interval_minutes);
+      }
     });
   }, []);
 
