@@ -106,6 +106,7 @@ export default function AppLayout() {
       />
       <Tabs.Screen name="roulette" options={{ href: null, headerShown: false }} />
       <Tabs.Screen name="summary" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="areas" options={{ href: null }} />
     </Tabs>
   );
 }
