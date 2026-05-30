@@ -625,7 +625,7 @@ export default function TasksScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* ── Add task area ──────────────────────────────────────────────── */}
-        <View style={styles.addArea}>
+        <View style={[styles.addArea, isWide ? styles.addAreaWide : styles.addAreaNarrow]}>
           {/* Pill-shaped input + submit button */}
           <View style={styles.inputBar}>
             <TextInput
@@ -701,78 +701,90 @@ export default function TasksScreen() {
 
           {/* Area tagging for add form — only when areas exist */}
           {areas.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipsGroup}>
-              <Chip
-                label="No area"
-                selected={addAreaId === null}
-                onPress={() => { setAddAreaId(null); setAddSubgoalId(null); }}
-              />
-              {areas.map((area) => (
-                <Chip
-                  key={area.id}
-                  label={area.name}
-                  selected={addAreaId === area.id}
-                  onPress={() => { setAddAreaId(area.id); setAddSubgoalId(null); }}
-                />
-              ))}
-            </ScrollView>
+            isWide ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipsGroup}>
+                <Chip label="No area" selected={addAreaId === null} onPress={() => { setAddAreaId(null); setAddSubgoalId(null); }} />
+                {areas.map((area) => (
+                  <Chip key={area.id} label={area.name} selected={addAreaId === area.id}
+                    onPress={() => { setAddAreaId(area.id); setAddSubgoalId(null); }} />
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.chipsWrap}>
+                <Chip label="No area" selected={addAreaId === null} onPress={() => { setAddAreaId(null); setAddSubgoalId(null); }} />
+                {areas.map((area) => (
+                  <Chip key={area.id} label={area.name} selected={addAreaId === area.id}
+                    onPress={() => { setAddAreaId(area.id); setAddSubgoalId(null); }} />
+                ))}
+              </View>
+            )
           )}
           {addAreaId && subgoals.filter((s) => s.area_id === addAreaId).length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipsGroup}>
-              {subgoals.filter((s) => s.area_id === addAreaId).map((sg) => (
-                <Chip
-                  key={sg.id}
-                  label={sg.hashtag}
-                  selected={addSubgoalId === sg.id}
-                  onPress={() => setAddSubgoalId(addSubgoalId === sg.id ? null : sg.id)}
-                />
-              ))}
-            </ScrollView>
+            isWide ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipsGroup}>
+                {subgoals.filter((s) => s.area_id === addAreaId).map((sg) => (
+                  <Chip key={sg.id} label={sg.hashtag} selected={addSubgoalId === sg.id}
+                    onPress={() => setAddSubgoalId(addSubgoalId === sg.id ? null : sg.id)} />
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.chipsWrap}>
+                {subgoals.filter((s) => s.area_id === addAreaId).map((sg) => (
+                  <Chip key={sg.id} label={sg.hashtag} selected={addSubgoalId === sg.id}
+                    onPress={() => setAddSubgoalId(addSubgoalId === sg.id ? null : sg.id)} />
+                ))}
+              </View>
+            )
           )}
         </View>
 
         {/* ── Area / Subgoal filter chips ────────────────────────────────── */}
         {areas.length > 0 && (
           <View style={styles.filterSection}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}>
-              <Chip
-                label="All"
-                selected={filterAreaId === null}
-                onPress={() => { setFilterAreaId(null); setFilterSubgoalId(null); }}
-              />
-              {areas.map((area) => (
-                <Chip
-                  key={area.id}
-                  label={area.name}
-                  selected={filterAreaId === area.id}
-                  onPress={() => {
-                    setFilterAreaId(area.id);
-                    setFilterSubgoalId(null);
-                  }}
-                />
-              ))}
-            </ScrollView>
-
-            {filterAreaId && subgoals.filter((s) => s.area_id === filterAreaId).length > 0 && (
+            {isWide ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.filterRow}>
-                <Chip
-                  label={`All ${areas.find((a) => a.id === filterAreaId)?.name ?? ''}`}
-                  selected={filterSubgoalId === null}
-                  onPress={() => setFilterSubgoalId(null)}
-                />
-                {subgoals.filter((s) => s.area_id === filterAreaId).map((sg) => (
-                  <Chip
-                    key={sg.id}
-                    label={sg.hashtag}
-                    selected={filterSubgoalId === sg.id}
-                    onPress={() => setFilterSubgoalId(sg.id)}
-                  />
+                <Chip label="All" selected={filterAreaId === null}
+                  onPress={() => { setFilterAreaId(null); setFilterSubgoalId(null); }} />
+                {areas.map((area) => (
+                  <Chip key={area.id} label={area.name} selected={filterAreaId === area.id}
+                    onPress={() => { setFilterAreaId(area.id); setFilterSubgoalId(null); }} />
                 ))}
               </ScrollView>
+            ) : (
+              <View style={styles.filterRow}>
+                <Chip label="All" selected={filterAreaId === null}
+                  onPress={() => { setFilterAreaId(null); setFilterSubgoalId(null); }} />
+                {areas.map((area) => (
+                  <Chip key={area.id} label={area.name} selected={filterAreaId === area.id}
+                    onPress={() => { setFilterAreaId(area.id); setFilterSubgoalId(null); }} />
+                ))}
+              </View>
+            )}
+
+            {filterAreaId && subgoals.filter((s) => s.area_id === filterAreaId).length > 0 && (
+              isWide ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.filterRow}>
+                  <Chip label={`All ${areas.find((a) => a.id === filterAreaId)?.name ?? ''}`}
+                    selected={filterSubgoalId === null} onPress={() => setFilterSubgoalId(null)} />
+                  {subgoals.filter((s) => s.area_id === filterAreaId).map((sg) => (
+                    <Chip key={sg.id} label={sg.hashtag} selected={filterSubgoalId === sg.id}
+                      onPress={() => setFilterSubgoalId(sg.id)} />
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.filterRow}>
+                  <Chip label={`All ${areas.find((a) => a.id === filterAreaId)?.name ?? ''}`}
+                    selected={filterSubgoalId === null} onPress={() => setFilterSubgoalId(null)} />
+                  {subgoals.filter((s) => s.area_id === filterAreaId).map((sg) => (
+                    <Chip key={sg.id} label={sg.hashtag} selected={filterSubgoalId === sg.id}
+                      onPress={() => setFilterSubgoalId(sg.id)} />
+                  ))}
+                </View>
+              )
             )}
           </View>
         )}
@@ -838,11 +850,18 @@ const styles = StyleSheet.create({
 
   // ── Add task area
   addArea: {
-    alignSelf: 'center',
-    paddingHorizontal: 40,
     paddingTop: 32,
     marginBottom: 40,
     gap: 16,
+  },
+  addAreaWide: {
+    alignSelf: 'center',
+    paddingHorizontal: 40,
+    maxWidth: 760,
+  },
+  addAreaNarrow: {
+    paddingHorizontal: 16,
+    width: '100%',
   },
   inputBar: {
     flexDirection: 'row',
@@ -910,12 +929,13 @@ const styles = StyleSheet.create({
   pillsRow: { flexDirection: 'row', gap: 8 },
 
   // ── Area / Subgoal filter
-  filterSection: { paddingHorizontal: 20, paddingTop: 12, gap: 8, marginBottom: 8 },
-  filterRow: { flexDirection: 'row', gap: 8 },
+  filterSection: { paddingHorizontal: 16, paddingTop: 12, gap: 8, marginBottom: 8 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 
   // ── Wide three-column layout
-  bucketsContainer: { paddingHorizontal: 80, paddingTop: 0 },
-  bucketsContainerWide: { flexDirection: 'row', gap: 26, alignItems: 'flex-start' },
+  bucketsContainer: { paddingHorizontal: 16, paddingTop: 0 },
+  bucketsContainerWide: { paddingHorizontal: 80, flexDirection: 'row', gap: 26, alignItems: 'flex-start' },
   bucketSection: {},
   bucketSectionWide: { flex: 1 },
   bucketSectionNarrow: {},
