@@ -179,7 +179,12 @@ function RouletteWorkMode() {
         type: 'side_quest' as const,
       }));
 
-      const shuffled = fisherYates([...todoItems, ...sqItems]);
+      // Cap side quests to honour the configured ratio (e.g. 0.3 = 30% of pool).
+      // ratio / (1 - ratio) gives the max sq count relative to todo count.
+      const maxSideQuests = Math.max(1, Math.round(todoItems.length * (config.sideQuestRatio / (1 - config.sideQuestRatio))));
+      const cappedSqItems = sqItems.slice(0, maxSideQuests);
+
+      const shuffled = fisherYates([...todoItems, ...cappedSqItems]);
       setPool(shuffled);
       setCurrentItemStartTime(Date.now());
       setInactivityDismissedForCurrentRoll(false);

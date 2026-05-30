@@ -289,6 +289,7 @@ export default function SessionScreen() {
   const [sideQuestsAvailable, setSideQuestsAvailable] = useState(false);
   const [sideQuests, setSideQuests] = useState<SideQuest[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [sideQuestRatio, setSideQuestRatio] = useState(30); // stored as %, e.g. 30 = 30%
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -297,6 +298,7 @@ export default function SessionScreen() {
       const settings = await getSettings(user.id);
       if (settings) {
         setIntervalMinutes(settings.break_interval_minutes);
+        setSideQuestRatio(Math.round(settings.side_quest_ratio * 100));
       }
     });
   }, []);
@@ -355,6 +357,7 @@ export default function SessionScreen() {
         durationMinutes,
         breakIntervalMinutes: intervalMinutes,
         justShuffleEverything: true,
+        sideQuestRatio: sideQuestRatio / 100,
       });
       router.push('/(app)/roulette');
       return;
@@ -386,6 +389,7 @@ export default function SessionScreen() {
       durationMinutes,
       breakIntervalMinutes: intervalMinutes,
       justShuffleEverything: false,
+      sideQuestRatio: sideQuestRatio / 100,
     });
     router.push('/(app)/roulette');
   }

@@ -6,6 +6,7 @@ export interface SessionConfig {
   durationMinutes: number;
   breakIntervalMinutes: number;
   justShuffleEverything: boolean;
+  sideQuestRatio: number; // 0–1, e.g. 0.3 = 30%
 }
 
 export interface RollRecord {
