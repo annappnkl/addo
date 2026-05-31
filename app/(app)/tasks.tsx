@@ -648,7 +648,7 @@ export default function TasksScreen() {
           </View>
 
           {/* Chips — bucket group + duration group, container hugs content */}
-          <View style={styles.chipsRow}>
+          <View style={[styles.chipsRow, !isWide && styles.chipsRowNarrow]}>
             <View style={styles.chipsGroup}>
               {BUCKETS.map((b) => (
                 <Chip
@@ -896,6 +896,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 40,
+  },
+  chipsRowNarrow: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 12,
   },
   chipsGroup: { flexDirection: 'row', gap: 6 },
   typeATimeChip: {
