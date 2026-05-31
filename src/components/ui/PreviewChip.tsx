@@ -1,27 +1,18 @@
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Colors, Radius, FontWeight } from './tokens';
 
-interface ChipProps {
+interface PreviewChipProps {
   label: string;
   selected: boolean;
   onPress: () => void;
-  // variant and size are kept for backwards compat — removed in the next commit
-  variant?: string;
-  size?: string;
-  disabled?: boolean;
 }
 
-export function Chip({ label, selected, onPress, disabled }: ChipProps) {
+export function PreviewChip({ label, selected, onPress }: PreviewChipProps) {
   return (
     <TouchableOpacity
-      style={[
-        styles.base,
-        selected ? styles.selected : styles.unselected,
-        disabled && styles.disabled,
-      ]}
+      style={[styles.base, selected ? styles.selected : styles.unselected]}
       onPress={onPress}
       activeOpacity={0.7}
-      disabled={disabled}
     >
       <Text style={[styles.text, selected ? styles.textSelected : styles.textUnselected]}>
         {label}
@@ -32,8 +23,8 @@ export function Chip({ label, selected, onPress, disabled }: ChipProps) {
 
 const styles = StyleSheet.create({
   base: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: Radius.full,
     borderWidth: 1,
     alignItems: 'center',
@@ -47,12 +38,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accentLight,
     borderColor: Colors.accent,
   },
-  disabled: {
-    opacity: 0.4,
-  },
   text: {
-    fontSize: 13,
-    fontWeight: FontWeight.medium,
+    fontSize: 12,
+    fontWeight: FontWeight.regular,
   },
   textUnselected: {
     color: Colors.textOn,
