@@ -21,9 +21,11 @@ import { bucketTotalMinutes, formatMinutes, moveBucketCircular, splitByDuration 
 import type { Area, Bucket, Subgoal, Todo } from '../../src/types';
 import {
   Colors,
+  AddInput,
   Chip,
   FieldInput,
   ItemMeta,
+  PreviewChip,
   SectionHeader,
 } from '../../src/components/ui';
 
@@ -99,38 +101,30 @@ function EditForm({
 }) {
   return (
     <View style={styles.editForm}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.pillsScroll}
-        contentContainerStyle={styles.pillsRow}
-      >
+      <View style={styles.editChipsWrap}>
         {DURATION_OPTIONS.map((d) => (
-          <Chip
+          <PreviewChip
             key={d}
             label={`${d} min`}
             selected={draft.duration === d}
             onPress={() => onChange({ ...draft, duration: d })}
-            variant="fixed"
           />
         ))}
-      </ScrollView>
+      </View>
 
       {areas.length > 0 && (
         <View style={styles.editChipsWrap}>
-          <Chip
+          <PreviewChip
             label="No area"
             selected={draft.areaId === null}
             onPress={() => onChange({ ...draft, areaId: null, subgoalId: null })}
-            size="sm"
           />
           {areas.map((area) => (
-            <Chip
+            <PreviewChip
               key={area.id}
               label={area.name}
               selected={draft.areaId === area.id}
               onPress={() => onChange({ ...draft, areaId: area.id, subgoalId: null })}
-              size="sm"
             />
           ))}
         </View>
@@ -139,12 +133,11 @@ function EditForm({
       {draft.areaId && subgoals.filter((s) => s.area_id === draft.areaId).length > 0 && (
         <View style={styles.editChipsWrap}>
           {subgoals.filter((s) => s.area_id === draft.areaId).map((sg) => (
-            <Chip
+            <PreviewChip
               key={sg.id}
               label={sg.hashtag}
               selected={draft.subgoalId === sg.id}
               onPress={() => onChange({ ...draft, subgoalId: draft.subgoalId === sg.id ? null : sg.id })}
-              size="sm"
             />
           ))}
         </View>
@@ -618,26 +611,13 @@ export default function TasksScreen() {
       >
         {/* ── Add task area ──────────────────────────────────────────────── */}
         <View style={[styles.addArea, isWide ? styles.addAreaWide : styles.addAreaNarrow]}>
-          {/* Pill-shaped input + submit button */}
-          <View style={styles.inputBar}>
-            <TextInput
-              style={styles.inputBarText}
-              placeholder="What is there to do?"
-              placeholderTextColor={Colors.textSecondary}
-              value={title}
-              onChangeText={setTitle}
-              returnKeyType="done"
-              onSubmitEditing={handleAdd}
-            />
-            <TouchableOpacity
-              style={[styles.submitCircle, { opacity: canAdd ? 1 : 0.35 }]}
-              onPress={handleAdd}
-              disabled={!canAdd || adding}
-              activeOpacity={0.85}
-            >
-              <Feather name="chevron-down" size={16} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+          <AddInput
+            value={title}
+            onChangeText={setTitle}
+            onSubmit={handleAdd}
+            placeholder="What is there to do?"
+            submitting={adding}
+          />
 
           {/* Chips — bucket group + duration group, container hugs content */}
           <View style={[styles.chipsRow, !isWide && styles.chipsRowNarrow]}>
@@ -663,7 +643,6 @@ export default function TasksScreen() {
                     setShowCustomDuration(false);
                     setCustomDurationInput('');
                   }}
-                  variant="fixed"
                 />
               ))}
               {showCustomDuration ? (
@@ -806,35 +785,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     width: '100%',
   },
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.inputBg,
-    borderRadius: 9999,
-    borderWidth: 1,
-    borderColor: Colors.borderInput,
-    height: 43,
-    paddingLeft: 24,
-    paddingRight: 4,
-    paddingVertical: 8,
-  },
-  inputBarText: {
-    flex: 1,
-    fontSize: 16,
-    color: Colors.textOn,
-    backgroundColor: 'transparent',
-    // @ts-ignore — web-only: suppress browser default focus outline
-    outlineWidth: 0,
-  },
-  submitCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   chipsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -873,9 +823,6 @@ const styles = StyleSheet.create({
     // @ts-ignore — web-only: suppress browser default focus outline
     outlineWidth: 0,
   },
-  pillsScroll: { flexGrow: 0 },
-  pillsRow: { flexDirection: 'row', gap: 8 },
-
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 
   // ── Wide three-column layout

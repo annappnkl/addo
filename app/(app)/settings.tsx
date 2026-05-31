@@ -78,7 +78,6 @@ export default function SettingsScreen() {
               label={`${m}m`}
               selected={breakInterval === m}
               onPress={() => handleBreakInterval(m)}
-              size="sm"
             />
           ))}
         </View>
@@ -93,7 +92,6 @@ export default function SettingsScreen() {
               label={`${pct}%`}
               selected={sideQuestRatio === pct}
               onPress={() => handleSideQuestRatio(pct)}
-              size="sm"
             />
           ))}
         </View>

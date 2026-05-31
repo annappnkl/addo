@@ -5,9 +5,6 @@ interface ChipProps {
   label: string;
   selected: boolean;
   onPress: () => void;
-  // variant and size are kept for backwards compat — removed in the next commit
-  variant?: string;
-  size?: string;
   disabled?: boolean;
 }
 
