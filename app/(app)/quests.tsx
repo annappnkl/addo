@@ -25,6 +25,7 @@ import {
 } from '../../src/db/dao';
 import type { SideQuest } from '../../src/types';
 import {
+  AddInput,
   Colors,
   Chip,
   FieldInput,
@@ -361,7 +362,6 @@ export default function QuestsScreen() {
 
   // Add form
   const [title, setTitle] = useState('');
-  const [titleFocused, setTitleFocused] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption | null>(null);
   const [link, setLink] = useState('');
   const [linkFocused, setLinkFocused] = useState(false);
@@ -449,15 +449,12 @@ export default function QuestsScreen() {
 
         {/* ── Add side quest area ───────────────────────────────────────── */}
         <View style={styles.addArea}>
-          <TextInput
-            style={[styles.titleInput, titleFocused && styles.titleInputFocused]}
-            placeholder="Drink a glass of water"
-            placeholderTextColor={Colors.textDisabled}
+          <AddInput
             value={title}
             onChangeText={setTitle}
-            onFocus={() => setTitleFocused(true)}
-            onBlur={() => setTitleFocused(false)}
-            returnKeyType="done"
+            onSubmit={handleAdd}
+            placeholder="e.g. Drink a glass of water"
+            submitting={adding}
           />
 
           <DurationPills
@@ -472,17 +469,6 @@ export default function QuestsScreen() {
             onFocus={() => setLinkFocused(true)}
             onBlur={() => setLinkFocused(false)}
           />
-
-          <TouchableOpacity
-            style={[styles.addButton, !canAdd && styles.addButtonDisabled]}
-            onPress={handleAdd}
-            disabled={!canAdd || adding}
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.addButtonText, !canAdd && styles.addButtonTextDisabled]}>
-              {adding ? 'Adding…' : 'Add Side Quest'}
-            </Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.divider} />
@@ -534,20 +520,6 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     gap: 12,
   },
-  titleInput: {
-    backgroundColor: Colors.inputBg,
-    borderWidth: 1,
-    borderColor: Colors.borderInput,
-    borderRadius: 9999,
-    paddingHorizontal: 16,
-    height: 48,
-    fontSize: 15,
-    color: Colors.textPrimary,
-    // @ts-ignore — web-only: suppress browser default focus outline
-    outlineWidth: 0,
-  },
-  titleInputFocused: { borderColor: Colors.accent },
-
   // ── Duration pills
   pillsScroll: { flexGrow: 0 },
   pillsRow: { flexDirection: 'row', gap: 8 },
@@ -572,18 +544,6 @@ const styles = StyleSheet.create({
     // @ts-ignore — web-only: suppress browser default focus outline
     outlineWidth: 0,
   },
-
-  // ── Add button
-  addButton: {
-    backgroundColor: Colors.accent,
-    borderRadius: 28,
-    height: 52,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButtonDisabled: { backgroundColor: Colors.borderWarm },
-  addButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  addButtonTextDisabled: { color: Colors.textDisabled },
 
   divider: { height: 1, backgroundColor: Colors.borderSubtle },
 
