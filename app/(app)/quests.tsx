@@ -42,7 +42,7 @@ const SWIPE_WIDTH = 72;
 type WebHoverExtras = { onMouseEnter?: () => void; onMouseLeave?: () => void };
 const HoverableView = View as React.ComponentType<ViewProps & WebHoverExtras>;
 
-function TrashIcon({ color, size = 20 }: { color: string; size?: number }) {
+function TrashIcon({ color, size = 24 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 -960 960 960">
       <Path d="M313.5-177q-23.97 0-40.73-16.77Q256-210.53 256-234.5v-484h-39.5v-25.33H361V-771h238.5v27H744v25.5h-39.5v484.23q0 24.21-16.53 40.74T647-177H313.5ZM679-718.5H281.5v484q0 14 9 23t23 9H647q12 0 22-10t10-22v-484ZM404.5-282H430v-357.5h-25.5V-282Zm126 0H556v-357.5h-25.5V-282Zm-249-436.5v516-516Z" fill={color} />
@@ -291,14 +291,14 @@ function SideQuestCard({
                 onPress={openLink}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Feather name="external-link" size={16} color={Colors.accent} />
+                <Feather name="external-link" size={24} color={Colors.accent} />
               </TouchableOpacity>
             ) : null}
             <TouchableOpacity
               onPress={onDelete}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <TrashIcon color={Colors.destructive} size={16} />
+              <TrashIcon color={Colors.destructive} size={24} />
             </TouchableOpacity>
           </View>
         </View>
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   rightSlot: {
-    width: 80,
+    width: 120,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 20,
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
