@@ -437,8 +437,6 @@ export default function TasksScreen() {
   const [userId, setUserId] = useState<string | null>(null);
   const [areas, setAreas] = useState<Area[]>([]);
   const [subgoals, setSubgoals] = useState<Subgoal[]>([]);
-  const [filterAreaId, setFilterAreaId] = useState<string | null>(null);
-  const [filterSubgoalId, setFilterSubgoalId] = useState<string | null>(null);
 
   // Add form
   const [title, setTitle] = useState('');
@@ -451,12 +449,6 @@ export default function TasksScreen() {
   // Add form — area/subgoal tagging
   const [addAreaId, setAddAreaId] = useState<string | null>(null);
   const [addSubgoalId, setAddSubgoalId] = useState<string | null>(null);
-
-  // Sync add form area/subgoal with active filter
-  useEffect(() => {
-    setAddAreaId(filterAreaId);
-    setAddSubgoalId(filterSubgoalId);
-  }, [filterAreaId, filterSubgoalId]);
 
   // Inline edit
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -518,9 +510,8 @@ export default function TasksScreen() {
     setShowCustomDuration(false);
     setCustomDurationInput('');
     // intentionally not resetting selectedBucket — user stays on their chosen bucket
-    // reset area/subgoal to active filter values (not null — user likely adding more to same area)
-    setAddAreaId(filterAreaId);
-    setAddSubgoalId(filterSubgoalId);
+    setAddAreaId(null);
+    setAddSubgoalId(null);
     await loadTodos(userId);
     setAdding(false);
   }
@@ -585,15 +576,16 @@ export default function TasksScreen() {
     if (userId) await loadTodos(userId);
   }
 
-  const filteredTodos = todos.filter((t) => {
-    if (filterSubgoalId) return t.subgoal_id === filterSubgoalId;
-    if (filterAreaId) return t.area_id === filterAreaId;
-    return true;
+  // Sort todos by area so same-area tasks appear adjacent within each bucket
+  const sortedTodos = [...todos].sort((a, b) => {
+    const aArea = a.area_id ?? '';
+    const bArea = b.area_id ?? '';
+    return aArea.localeCompare(bArea);
   });
 
   // Shared BucketSection props
   const sharedSectionProps = {
-    todos: filteredTodos,
+    todos: sortedTodos,
     expandedId,
     draft,
     onToggle: handleToggle,
@@ -740,55 +732,6 @@ export default function TasksScreen() {
           )}
         </View>
 
-        {/* ── Area / Subgoal filter chips ────────────────────────────────── */}
-        {areas.length > 0 && (
-          <View style={styles.filterSection}>
-            {isWide ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterRow}>
-                <Chip label="All" selected={filterAreaId === null}
-                  onPress={() => { setFilterAreaId(null); setFilterSubgoalId(null); }} />
-                {areas.map((area) => (
-                  <Chip key={area.id} label={area.name} selected={filterAreaId === area.id}
-                    onPress={() => { setFilterAreaId(area.id); setFilterSubgoalId(null); }} />
-                ))}
-              </ScrollView>
-            ) : (
-              <View style={styles.filterRow}>
-                <Chip label="All" selected={filterAreaId === null}
-                  onPress={() => { setFilterAreaId(null); setFilterSubgoalId(null); }} />
-                {areas.map((area) => (
-                  <Chip key={area.id} label={area.name} selected={filterAreaId === area.id}
-                    onPress={() => { setFilterAreaId(area.id); setFilterSubgoalId(null); }} />
-                ))}
-              </View>
-            )}
-
-            {filterAreaId && subgoals.filter((s) => s.area_id === filterAreaId).length > 0 && (
-              isWide ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.filterRow}>
-                  <Chip label={`All ${areas.find((a) => a.id === filterAreaId)?.name ?? ''}`}
-                    selected={filterSubgoalId === null} onPress={() => setFilterSubgoalId(null)} />
-                  {subgoals.filter((s) => s.area_id === filterAreaId).map((sg) => (
-                    <Chip key={sg.id} label={sg.hashtag} selected={filterSubgoalId === sg.id}
-                      onPress={() => setFilterSubgoalId(sg.id)} />
-                  ))}
-                </ScrollView>
-              ) : (
-                <View style={styles.filterRow}>
-                  <Chip label={`All ${areas.find((a) => a.id === filterAreaId)?.name ?? ''}`}
-                    selected={filterSubgoalId === null} onPress={() => setFilterSubgoalId(null)} />
-                  {subgoals.filter((s) => s.area_id === filterAreaId).map((sg) => (
-                    <Chip key={sg.id} label={sg.hashtag} selected={filterSubgoalId === sg.id}
-                      onPress={() => setFilterSubgoalId(sg.id)} />
-                  ))}
-                </View>
-              )
-            )}
-          </View>
-        )}
-
         {/* ── Wide: classic divider → three columns ─────────────────────── */}
         {isWide && (
           <>
@@ -820,7 +763,7 @@ export default function TasksScreen() {
                     {bucket}
                   </Text>
                   <Text style={[styles.tabTotal, activeBucket === bucket && styles.tabTotalActive]}>
-                    {formatMinutes(bucketTotalMinutes(filteredTodos, bucket))}
+                    {formatMinutes(bucketTotalMinutes(sortedTodos, bucket))}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -933,9 +876,6 @@ const styles = StyleSheet.create({
   pillsScroll: { flexGrow: 0 },
   pillsRow: { flexDirection: 'row', gap: 8 },
 
-  // ── Area / Subgoal filter
-  filterSection: { paddingHorizontal: 16, paddingTop: 12, gap: 8, marginBottom: 8 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 
   // ── Wide three-column layout
