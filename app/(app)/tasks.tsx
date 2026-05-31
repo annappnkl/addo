@@ -30,14 +30,14 @@ import {
 } from '../../src/components/ui';
 
 // ─── Asset icons (paths from assets/*.svg, viewBox matches Material Symbols) ──
-function ArrowLeftIcon({ color, size = 20 }: { color: string; size?: number }) {
+function ArrowLeftIcon({ color, size = 24 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 -960 960 960">
       <Path d="m559.5-279-201-201 201-201 18 18.5L395-480l182.5 182.5-18 18.5Z" fill={color} />
     </Svg>
   );
 }
-function ArrowRightIcon({ color, size = 20 }: { color: string; size?: number }) {
+function ArrowRightIcon({ color, size = 24 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 -960 960 960">
       <Path d="M541-480 358.5-662.5l18-18.5 201 201-201 201-18-18.5L541-480Z" fill={color} />
