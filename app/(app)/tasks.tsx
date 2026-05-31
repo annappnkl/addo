@@ -791,11 +791,11 @@ const styles = StyleSheet.create({
     gap: 40,
   },
   chipsRowNarrow: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  chipsGroup: { flexDirection: 'row', gap: 6 },
+  chipsGroup: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   typeATimeChip: {
     width: 128,
     height: 38,
