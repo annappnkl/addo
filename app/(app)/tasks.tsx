@@ -619,56 +619,56 @@ export default function TasksScreen() {
             submitting={adding}
           />
 
-          {/* Chips — bucket group + duration group, container hugs content */}
-          <View style={[styles.chipsRow, !isWide && styles.chipsRowNarrow]}>
-            <View style={styles.chipsGroup}>
-              {BUCKETS.map((b) => (
-                <Chip
-                  key={b}
-                  label={b}
-                  selected={selectedBucket === b}
-                  onPress={() => setSelectedBucket(b)}
-                />
-              ))}
+          {/* Chips — bucket group + duration group */}
+          {isWide ? (
+            <View style={styles.chipsRow}>
+              <View style={styles.chipsGroup}>
+                {BUCKETS.map((b) => (
+                  <Chip key={b} label={b} selected={selectedBucket === b} onPress={() => setSelectedBucket(b)} />
+                ))}
+              </View>
+              <View style={styles.chipsGroup}>
+                {DURATION_OPTIONS.map((d) => (
+                  <Chip
+                    key={d}
+                    label={`${d}'`}
+                    selected={selectedDuration === d}
+                    onPress={() => { setSelectedDuration(selectedDuration === d ? null : d); setShowCustomDuration(false); setCustomDurationInput(''); }}
+                  />
+                ))}
+                {showCustomDuration ? (
+                  <TextInput style={styles.timeInlineInput} value={customDurationInput} onChangeText={setCustomDurationInput}
+                    placeholder="e.g. 45" placeholderTextColor={Colors.textSecondary} keyboardType="numeric" autoFocus />
+                ) : (
+                  <TouchableOpacity style={styles.typeATimeChip} onPress={() => { setShowCustomDuration(true); setSelectedDuration(null); }} activeOpacity={0.7}>
+                    <Text style={styles.typeATimeChipText}>Type a time</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-
-            <View style={styles.chipsGroup}>
+          ) : (
+            <View style={styles.chipsRowNarrow}>
+              {BUCKETS.map((b) => (
+                <Chip key={b} label={b} selected={selectedBucket === b} onPress={() => setSelectedBucket(b)} />
+              ))}
               {DURATION_OPTIONS.map((d) => (
                 <Chip
                   key={d}
                   label={`${d}'`}
                   selected={selectedDuration === d}
-                  onPress={() => {
-                    setSelectedDuration(selectedDuration === d ? null : d);
-                    setShowCustomDuration(false);
-                    setCustomDurationInput('');
-                  }}
+                  onPress={() => { setSelectedDuration(selectedDuration === d ? null : d); setShowCustomDuration(false); setCustomDurationInput(''); }}
                 />
               ))}
               {showCustomDuration ? (
-                <TextInput
-                  style={styles.timeInlineInput}
-                  value={customDurationInput}
-                  onChangeText={setCustomDurationInput}
-                  placeholder="e.g. 45"
-                  placeholderTextColor={Colors.textSecondary}
-                  keyboardType="numeric"
-                  autoFocus
-                />
+                <TextInput style={styles.timeInlineInput} value={customDurationInput} onChangeText={setCustomDurationInput}
+                  placeholder="e.g. 45" placeholderTextColor={Colors.textSecondary} keyboardType="numeric" autoFocus />
               ) : (
-                <TouchableOpacity
-                  style={styles.typeATimeChip}
-                  onPress={() => {
-                    setShowCustomDuration(true);
-                    setSelectedDuration(null);
-                  }}
-                  activeOpacity={0.7}
-                >
+                <TouchableOpacity style={styles.typeATimeChip} onPress={() => { setShowCustomDuration(true); setSelectedDuration(null); }} activeOpacity={0.7}>
                   <Text style={styles.typeATimeChipText}>Type a time</Text>
                 </TouchableOpacity>
               )}
             </View>
-          </View>
+          )}
 
           {/* Area tagging for add form — only when areas exist */}
           {areas.length > 0 && (
@@ -797,10 +797,8 @@ const styles = StyleSheet.create({
   },
   chipsGroup: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   typeATimeChip: {
-    width: 128,
-    height: 38,
-    paddingVertical: 8,
-    paddingHorizontal: 21,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     backgroundColor: Colors.inputBg,
     borderWidth: 1,
     borderColor: Colors.borderInput,
@@ -808,16 +806,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  typeATimeChipText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
+  typeATimeChipText: { color: Colors.textSecondary, fontSize: 13, fontWeight: '500' },
   timeInlineInput: {
-    width: 128,
-    height: 38,
+    minWidth: 72,
     borderRadius: 9999,
     borderWidth: 1,
     borderColor: Colors.accent,
     backgroundColor: Colors.accentLight,
-    paddingHorizontal: 21,
-    fontSize: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    fontSize: 13,
     color: Colors.textOn,
     textAlign: 'center',
     // @ts-ignore — web-only: suppress browser default focus outline
