@@ -451,7 +451,7 @@ export default function QuestsScreen() {
         <View style={styles.addArea}>
           <TextInput
             style={[styles.titleInput, titleFocused && styles.titleInputFocused]}
-            placeholder="e.g. Drink a glass of water"
+            placeholder="Drink a glass of water"
             placeholderTextColor={Colors.textDisabled}
             value={title}
             onChangeText={setTitle}
