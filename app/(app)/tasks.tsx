@@ -1104,9 +1104,9 @@ const styles = StyleSheet.create({
   },
 
   // ── Edit form (expands within the row)
-  editForm: { gap: 10, width: '100%', paddingTop: 4, paddingBottom: 20 },
-  editChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  editNotesInput: { minHeight: 72, textAlignVertical: 'top' },
+  editForm: { gap: 14, width: '100%', paddingTop: 4, paddingBottom: 20 },
+  editChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  editNotesInput: { minHeight: 72, textAlignVertical: 'top', fontSize: 13 },
 
   // ── Inline area/subgoal creation input
   inlineCreateInput: {
