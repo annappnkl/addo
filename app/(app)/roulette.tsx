@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
+  Alert,
   Animated,
   Linking,
   SafeAreaView,
@@ -10,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { router, Tabs } from 'expo-router';
 import { supabase } from '../../src/db/supabase';
 import { getTodosByUser, insertTodo } from '../../src/db/dao';
@@ -463,6 +465,17 @@ function RouletteWorkMode() {
     void endSession(pool, doneTodoIds, seenSideQuestIds);
   }
 
+  function handleAbortSession() {
+    Alert.alert(
+      'End session?',
+      'The current task stays in your todo list.',
+      [
+        { text: 'Keep going', style: 'cancel' },
+        { text: 'End session', style: 'destructive', onPress: () => router.replace('/(app)/tasks') },
+      ]
+    );
+  }
+
   function handleSnooze(minutes: number) {
     setExtraMinutes((prev) => prev + minutes);
     setIsSoftEnd(false);
@@ -485,7 +498,9 @@ function RouletteWorkMode() {
 
       {/* ── Top bar ─────────────────────────────────────────────────────── */}
       <View style={styles.topBar}>
-        <Text style={styles.topBarLeft}>Session</Text>
+        <TouchableOpacity onPress={handleAbortSession} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Feather name="x" size={20} color={Colors.textSecondary} />
+        </TouchableOpacity>
         <Text style={styles.topBarRight}>
           {formatElapsed(elapsed)} · break in {minUntilBreak}m
         </Text>
