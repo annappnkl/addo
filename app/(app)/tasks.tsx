@@ -16,7 +16,7 @@ import { Feather } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import { useFocusEffect } from 'expo-router';
 import { supabase } from '../../src/db/supabase';
-import { getTodosByUser, insertTodo, deleteTodo, updateTodo, getAreasByUser, getSubgoalsByUser } from '../../src/db/dao';
+import { getTodosByUser, insertTodo, deleteTodo, updateTodo, getAreasByUser, getSubgoalsByUser, insertArea, insertSubgoal } from '../../src/db/dao';
 import { bucketTotalMinutes, formatMinutes, moveBucketCircular, splitByDuration } from '../../src/logic/todos';
 import type { Area, Bucket, Subgoal, Todo } from '../../src/types';
 import {
@@ -93,12 +93,39 @@ function EditForm({
   onChange,
   areas,
   subgoals,
+  onCreateArea,
+  onCreateSubgoal,
 }: {
   draft: EditDraft;
   onChange: (d: EditDraft) => void;
   areas: Area[];
   subgoals: Subgoal[];
+  onCreateArea: (name: string) => Promise<Area | null>;
+  onCreateSubgoal: (name: string, areaId: string) => Promise<Subgoal | null>;
 }) {
+  const [addingArea, setAddingArea] = useState(false);
+  const [newAreaName, setNewAreaName] = useState('');
+  const [addingSubgoal, setAddingSubgoal] = useState(false);
+  const [newSubgoalName, setNewSubgoalName] = useState('');
+
+  async function submitArea() {
+    const name = newAreaName.trim();
+    setAddingArea(false);
+    setNewAreaName('');
+    if (!name) return;
+    const area = await onCreateArea(name);
+    if (area) onChange({ ...draft, areaId: area.id, subgoalId: null });
+  }
+
+  async function submitSubgoal() {
+    const name = newSubgoalName.trim();
+    setAddingSubgoal(false);
+    setNewSubgoalName('');
+    if (!name || !draft.areaId) return;
+    const sg = await onCreateSubgoal(name, draft.areaId);
+    if (sg) onChange({ ...draft, subgoalId: sg.id });
+  }
+
   return (
     <View style={styles.editForm}>
       <View style={styles.editChipsWrap}>
@@ -112,25 +139,38 @@ function EditForm({
         ))}
       </View>
 
-      {areas.length > 0 && (
-        <View style={styles.editChipsWrap}>
+      <View style={styles.editChipsWrap}>
+        <PreviewChip
+          label="No area"
+          selected={draft.areaId === null}
+          onPress={() => onChange({ ...draft, areaId: null, subgoalId: null })}
+        />
+        {areas.map((area) => (
           <PreviewChip
-            label="No area"
-            selected={draft.areaId === null}
-            onPress={() => onChange({ ...draft, areaId: null, subgoalId: null })}
+            key={area.id}
+            label={area.name}
+            selected={draft.areaId === area.id}
+            onPress={() => onChange({ ...draft, areaId: area.id, subgoalId: null })}
           />
-          {areas.map((area) => (
-            <PreviewChip
-              key={area.id}
-              label={area.name}
-              selected={draft.areaId === area.id}
-              onPress={() => onChange({ ...draft, areaId: area.id, subgoalId: null })}
-            />
-          ))}
-        </View>
-      )}
+        ))}
+        {addingArea ? (
+          <TextInput
+            style={styles.inlineCreateInput}
+            value={newAreaName}
+            onChangeText={setNewAreaName}
+            placeholder="Area name"
+            placeholderTextColor={Colors.textDisabled}
+            autoFocus
+            returnKeyType="done"
+            onSubmitEditing={submitArea}
+            onBlur={submitArea}
+          />
+        ) : (
+          <PreviewChip label="+" selected={false} onPress={() => setAddingArea(true)} />
+        )}
+      </View>
 
-      {draft.areaId && subgoals.filter((s) => s.area_id === draft.areaId).length > 0 && (
+      {draft.areaId && (
         <View style={styles.editChipsWrap}>
           {subgoals.filter((s) => s.area_id === draft.areaId).map((sg) => (
             <PreviewChip
@@ -140,6 +180,21 @@ function EditForm({
               onPress={() => onChange({ ...draft, subgoalId: draft.subgoalId === sg.id ? null : sg.id })}
             />
           ))}
+          {addingSubgoal ? (
+            <TextInput
+              style={styles.inlineCreateInput}
+              value={newSubgoalName}
+              onChangeText={setNewSubgoalName}
+              placeholder="Subgoal name"
+              placeholderTextColor={Colors.textDisabled}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={submitSubgoal}
+              onBlur={submitSubgoal}
+            />
+          ) : (
+            <PreviewChip label="+" selected={false} onPress={() => setAddingSubgoal(true)} />
+          )}
         </View>
       )}
 
@@ -182,6 +237,8 @@ function TaskCard({
   onMoveBucket,
   areas,
   subgoals,
+  onCreateArea,
+  onCreateSubgoal,
 }: {
   todo: Todo;
   isExpanded: boolean;
@@ -198,6 +255,8 @@ function TaskCard({
   onMoveBucket: (direction: 'left' | 'right') => void;
   areas: Area[];
   subgoals: Subgoal[];
+  onCreateArea: (name: string) => Promise<Area | null>;
+  onCreateSubgoal: (name: string, areaId: string) => Promise<Subgoal | null>;
 }) {
   const showIcons = (isHovered || isSelected) && !isExpanded;
   const titleInputRef = useRef<TextInput>(null);
@@ -282,6 +341,8 @@ function TaskCard({
             onChange={onDraftChange}
             areas={areas}
             subgoals={subgoals}
+            onCreateArea={onCreateArea}
+            onCreateSubgoal={onCreateSubgoal}
           />
         </Pressable>
       );
@@ -326,6 +387,8 @@ function TaskCard({
           onChange={onDraftChange}
           areas={areas}
           subgoals={subgoals}
+          onCreateArea={onCreateArea}
+          onCreateSubgoal={onCreateSubgoal}
         />
       </Pressable>
     );
@@ -362,6 +425,8 @@ function BucketSection({
   onMoveBucket,
   areas,
   subgoals,
+  onCreateArea,
+  onCreateSubgoal,
 }: {
   bucket: Bucket;
   todos: Todo[];
@@ -381,6 +446,8 @@ function BucketSection({
   onMoveBucket: (id: string, direction: 'left' | 'right') => void;
   areas: Area[];
   subgoals: Subgoal[];
+  onCreateArea: (name: string) => Promise<Area | null>;
+  onCreateSubgoal: (name: string, areaId: string) => Promise<Subgoal | null>;
 }) {
   const bucketTodos = todos.filter((t) => t.bucket === bucket);
 
@@ -414,6 +481,8 @@ function BucketSection({
             onMoveBucket={(dir) => onMoveBucket(todo.id, dir)}
             areas={areas}
             subgoals={subgoals}
+            onCreateArea={onCreateArea}
+            onCreateSubgoal={onCreateSubgoal}
           />
         ))
       )}
@@ -442,6 +511,10 @@ export default function TasksScreen() {
   // Add form — area/subgoal tagging
   const [addAreaId, setAddAreaId] = useState<string | null>(null);
   const [addSubgoalId, setAddSubgoalId] = useState<string | null>(null);
+  const [addFormAddingArea, setAddFormAddingArea] = useState(false);
+  const [addFormNewAreaName, setAddFormNewAreaName] = useState('');
+  const [addFormAddingSubgoal, setAddFormAddingSubgoal] = useState(false);
+  const [addFormNewSubgoalName, setAddFormNewSubgoalName] = useState('');
 
   // Inline edit
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -569,6 +642,42 @@ export default function TasksScreen() {
     if (userId) await loadTodos(userId);
   }
 
+  async function createAreaInline(name: string): Promise<Area | null> {
+    if (!userId) return null;
+    const area = await insertArea(userId, name);
+    if (userId) await loadAll(userId);
+    return area;
+  }
+
+  async function createSubgoalInline(name: string, areaId: string): Promise<Subgoal | null> {
+    if (!userId) return null;
+    const hashtag = '#' + name.replace(/\s+/g, '');
+    const sg = await insertSubgoal(userId, areaId, name, hashtag);
+    if (userId) await loadAll(userId);
+    return sg;
+  }
+
+  async function addFormSubmitArea() {
+    const name = addFormNewAreaName.trim();
+    setAddFormAddingArea(false);
+    setAddFormNewAreaName('');
+    if (!name || !userId) return;
+    const area = await insertArea(userId, name);
+    await loadAll(userId);
+    if (area) { setAddAreaId(area.id); setAddSubgoalId(null); }
+  }
+
+  async function addFormSubmitSubgoal() {
+    const name = addFormNewSubgoalName.trim();
+    setAddFormAddingSubgoal(false);
+    setAddFormNewSubgoalName('');
+    if (!name || !addAreaId || !userId) return;
+    const hashtag = '#' + name.replace(/\s+/g, '');
+    const sg = await insertSubgoal(userId, addAreaId, name, hashtag);
+    await loadAll(userId);
+    if (sg) setAddSubgoalId(sg.id);
+  }
+
   // Sort todos by area so same-area tasks appear adjacent within each bucket
   const sortedTodos = [...todos].sort((a, b) => {
     const aArea = a.area_id ?? '';
@@ -593,6 +702,8 @@ export default function TasksScreen() {
     onMoveBucket: handleMoveBucket,
     areas,
     subgoals,
+    onCreateArea: createAreaInline,
+    onCreateSubgoal: createSubgoalInline,
   };
 
   return (
@@ -670,28 +781,56 @@ export default function TasksScreen() {
             </View>
           )}
 
-          {/* Area tagging for add form — only when areas exist */}
-          {areas.length > 0 && (
-            isWide ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsGroup}>
-                <Chip label="No area" selected={addAreaId === null} onPress={() => { setAddAreaId(null); setAddSubgoalId(null); }} />
-                {areas.map((area) => (
-                  <Chip key={area.id} label={area.name} selected={addAreaId === area.id}
-                    onPress={() => { setAddAreaId(area.id); setAddSubgoalId(null); }} />
-                ))}
-              </ScrollView>
-            ) : (
-              <View style={styles.chipsWrap}>
-                <Chip label="No area" selected={addAreaId === null} onPress={() => { setAddAreaId(null); setAddSubgoalId(null); }} />
-                {areas.map((area) => (
-                  <Chip key={area.id} label={area.name} selected={addAreaId === area.id}
-                    onPress={() => { setAddAreaId(area.id); setAddSubgoalId(null); }} />
-                ))}
-              </View>
-            )
+          {/* Area tagging for add form */}
+          {isWide ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipsGroup}>
+              <Chip label="No area" selected={addAreaId === null} onPress={() => { setAddAreaId(null); setAddSubgoalId(null); }} />
+              {areas.map((area) => (
+                <Chip key={area.id} label={area.name} selected={addAreaId === area.id}
+                  onPress={() => { setAddAreaId(area.id); setAddSubgoalId(null); }} />
+              ))}
+              {addFormAddingArea ? (
+                <TextInput
+                  style={styles.inlineCreateInput}
+                  value={addFormNewAreaName}
+                  onChangeText={setAddFormNewAreaName}
+                  placeholder="Area name"
+                  placeholderTextColor={Colors.textDisabled}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={addFormSubmitArea}
+                  onBlur={addFormSubmitArea}
+                />
+              ) : (
+                <Chip label="+" selected={false} onPress={() => setAddFormAddingArea(true)} />
+              )}
+            </ScrollView>
+          ) : (
+            <View style={styles.chipsWrap}>
+              <Chip label="No area" selected={addAreaId === null} onPress={() => { setAddAreaId(null); setAddSubgoalId(null); }} />
+              {areas.map((area) => (
+                <Chip key={area.id} label={area.name} selected={addAreaId === area.id}
+                  onPress={() => { setAddAreaId(area.id); setAddSubgoalId(null); }} />
+              ))}
+              {addFormAddingArea ? (
+                <TextInput
+                  style={styles.inlineCreateInput}
+                  value={addFormNewAreaName}
+                  onChangeText={setAddFormNewAreaName}
+                  placeholder="Area name"
+                  placeholderTextColor={Colors.textDisabled}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={addFormSubmitArea}
+                  onBlur={addFormSubmitArea}
+                />
+              ) : (
+                <Chip label="+" selected={false} onPress={() => setAddFormAddingArea(true)} />
+              )}
+            </View>
           )}
-          {addAreaId && subgoals.filter((s) => s.area_id === addAreaId).length > 0 && (
+          {addAreaId && (
             isWide ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.chipsGroup}>
@@ -699,6 +838,21 @@ export default function TasksScreen() {
                   <Chip key={sg.id} label={sg.hashtag} selected={addSubgoalId === sg.id}
                     onPress={() => setAddSubgoalId(addSubgoalId === sg.id ? null : sg.id)} />
                 ))}
+                {addFormAddingSubgoal ? (
+                  <TextInput
+                    style={styles.inlineCreateInput}
+                    value={addFormNewSubgoalName}
+                    onChangeText={setAddFormNewSubgoalName}
+                    placeholder="Subgoal name"
+                    placeholderTextColor={Colors.textDisabled}
+                    autoFocus
+                    returnKeyType="done"
+                    onSubmitEditing={addFormSubmitSubgoal}
+                    onBlur={addFormSubmitSubgoal}
+                  />
+                ) : (
+                  <Chip label="+" selected={false} onPress={() => setAddFormAddingSubgoal(true)} />
+                )}
               </ScrollView>
             ) : (
               <View style={styles.chipsWrap}>
@@ -706,6 +860,21 @@ export default function TasksScreen() {
                   <Chip key={sg.id} label={sg.hashtag} selected={addSubgoalId === sg.id}
                     onPress={() => setAddSubgoalId(addSubgoalId === sg.id ? null : sg.id)} />
                 ))}
+                {addFormAddingSubgoal ? (
+                  <TextInput
+                    style={styles.inlineCreateInput}
+                    value={addFormNewSubgoalName}
+                    onChangeText={setAddFormNewSubgoalName}
+                    placeholder="Subgoal name"
+                    placeholderTextColor={Colors.textDisabled}
+                    autoFocus
+                    returnKeyType="done"
+                    onSubmitEditing={addFormSubmitSubgoal}
+                    onBlur={addFormSubmitSubgoal}
+                  />
+                ) : (
+                  <Chip label="+" selected={false} onPress={() => setAddFormAddingSubgoal(true)} />
+                )}
               </View>
             )
           )}
@@ -938,4 +1107,19 @@ const styles = StyleSheet.create({
   editForm: { gap: 10, width: '100%', paddingTop: 4, paddingBottom: 20 },
   editChipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   editNotesInput: { minHeight: 72, textAlignVertical: 'top' },
+
+  // ── Inline area/subgoal creation input
+  inlineCreateInput: {
+    minWidth: 96,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    backgroundColor: Colors.accentLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    fontSize: 13,
+    color: Colors.textOn,
+    // @ts-ignore — web-only
+    outlineWidth: 0,
+  },
 });
